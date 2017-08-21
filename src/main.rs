@@ -14,13 +14,15 @@ use std::io::Read;
 use std::env;
 
 const ENLARGEMENT_FACTOR: usize = 1;
+const WINDOW_WIDTH: u32 = 64;
+const WINDOW_HEIGHT: u32 = 32;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let debug = args.len() > 1 && args[1] == "debug";
 
-    let width = display::WINDOW_WIDTH as u32;
-    let height = display::WINDOW_HEIGHT as u32;
+    let width = WINDOW_WIDTH;
+    let height = WINDOW_HEIGHT;
 
     let mut window = create_window(width, height);
 
@@ -31,7 +33,6 @@ fn main() {
     let mut cpu = Cpu::new(game_data);
     let mut display = Display::new();
 
-    let mut scale = 1;
     while let Some(e) = window.next() {
         if let Some(_) = e.render_args() {
             draw_screen(&e, &display.get_screen(), &mut window);
