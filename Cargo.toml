@@ -6,3 +6,4 @@ authors = ["Matthew Herman <mattherman11@gmail.com>"]
 [dependencies]
 piston_window = "0.61.0"
 image = "0.12.4"
+rand = "0.3"
