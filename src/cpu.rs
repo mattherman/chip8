@@ -11,6 +11,8 @@ pub struct Cpu {
     pc: u16,
     stack: [u16; 16],
     sp: u16,
+    del_timer: u8,
+    sound_timer: u8,
     pub draw_flag: bool,
     pub faulted: bool,
 }
@@ -49,6 +51,7 @@ impl Cpu {
         } else {
             self.execute_instruction(instruction);
             self.print_registers();
+            self.handle_timers();
         }
     }
 
@@ -70,6 +73,17 @@ impl Cpu {
             Instruction::Assign(r1, r2) => self.assign(r1, r2),
             Instruction::InvalidOperation => {},
         };
+    }
+
+    fn handle_timers(&mut self) {
+        if self.del_timer > 0 {
+            self.del_timer -= 1;
+        }
+
+        if self.sound_timer > 0 {
+            // BEEP!
+            self.sound_timer -= 1;
+        }
     }
 
     fn read_register(&self, register: Register) -> Value {
