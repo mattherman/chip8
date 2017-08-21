@@ -31,6 +31,8 @@ impl Cpu {
             pc: 0x200,
             stack: [0; 16],
             sp: 0,
+            del_timer: 0,
+            sound_timer: 0,
             draw_flag: false,
             faulted: false,
         }
