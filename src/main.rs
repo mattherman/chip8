@@ -26,9 +26,12 @@ fn main() {
 
     let mut window = create_window(width, height);
 
-    let mut file = File::open("/home/matthew/development/chip8-roms/blinky.rom").expect("Unable to open the ROM file.");
+    let mut file = File::open("/home/matthew/development/chip8-roms/15puzzle.rom")
+        .expect("Unable to open the ROM file.");
     let mut game_data = Vec::new();
-    file.read_to_end(&mut game_data).expect("Unable to read the ROM file.");
+    file.read_to_end(&mut game_data).expect(
+        "Unable to read the ROM file.",
+    );
 
     let mut cpu = Cpu::new(game_data, debug);
 
@@ -41,12 +44,12 @@ fn main() {
                 cpu.cycle();
             }
         };
-        
+
         // If debugging is enabled, only cycle on space bar presses
         if !step {
             cpu.cycle();
         }
-        
+
     }
 }
 

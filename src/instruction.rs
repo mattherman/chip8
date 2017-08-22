@@ -2,7 +2,7 @@ pub type Register = u8;
 pub type Address = u16;
 pub type Value = u8;
 
-use std::{ fmt };
+use std::fmt;
 
 #[derive(Debug)]
 #[derive(PartialEq)]
@@ -36,10 +36,12 @@ pub enum Instruction {
 impl Instruction {
     pub fn parse(val: u16) -> Instruction {
         match val & 0xF000 {
-            0x0000 => match val & 0x000F {
-                0x0000 => Instruction::Clear,
-                0x000E => Instruction::Return,
-                _ => Instruction::InvalidOperation,
+            0x0000 => {
+                match val & 0x000F {
+                    0x0000 => Instruction::Clear,
+                    0x000E => Instruction::Return,
+                    _ => Instruction::InvalidOperation,
+                }
             }
             0x1000 => Instruction::Jump(get_address(val)),
             0x2000 => Instruction::Call(get_address(val)),
@@ -47,26 +49,42 @@ impl Instruction {
             0x4000 => Instruction::SkipIfNotEqual(get_first_register(val), get_value(val)),
             0x6000 => Instruction::LoadVal(get_first_register(val), get_value(val)),
             0x7000 => Instruction::AddVal(get_first_register(val), get_value(val)),
-            0x8000 => match val & 0x000F {
-                0x0000 => Instruction::LoadReg(get_first_register(val), get_second_register(val)),
-                0x0001 => Instruction::Or(get_first_register(val), get_second_register(val)),
-                0x0002 => Instruction::And(get_first_register(val), get_second_register(val)),
-                0x0003 => Instruction::Xor(get_first_register(val), get_second_register(val)),
-                0x0004 => Instruction::AddReg(get_first_register(val), get_second_register(val)),
-                0x0005 => Instruction::SubReg(get_first_register(val), get_second_register(val)),
-                0x0006 => Instruction::ShiftRight(get_first_register(val)),
-                0x000E => Instruction::ShiftLeft(get_first_register(val)),
-                _ => Instruction::InvalidOperation,
-            },
+            0x8000 => {
+                match val & 0x000F {
+                    0x0000 => {
+                        Instruction::LoadReg(get_first_register(val), get_second_register(val))
+                    }
+                    0x0001 => Instruction::Or(get_first_register(val), get_second_register(val)),
+                    0x0002 => Instruction::And(get_first_register(val), get_second_register(val)),
+                    0x0003 => Instruction::Xor(get_first_register(val), get_second_register(val)),
+                    0x0004 => {
+                        Instruction::AddReg(get_first_register(val), get_second_register(val))
+                    }
+                    0x0005 => {
+                        Instruction::SubReg(get_first_register(val), get_second_register(val))
+                    }
+                    0x0006 => Instruction::ShiftRight(get_first_register(val)),
+                    0x000E => Instruction::ShiftLeft(get_first_register(val)),
+                    _ => Instruction::InvalidOperation,
+                }
+            }
             0xA000 => Instruction::SetIndexRegister(get_address(val)),
             0xC000 => Instruction::Random(get_first_register(val), get_value(val)),
-            0xD000 => Instruction::Draw(get_first_register(val), get_second_register(val), get_value(val)),
-            0xF000 => match val & 0x00FF {
-                0x001E => Instruction::AddIndex(get_first_register(val)),
-                0x0029 => Instruction::LoadDigit(get_first_register(val)),
-                0x0055 => Instruction::StoreIndex(get_first_register(val)),
-                0x0065 => Instruction::ReadIndex(get_first_register(val)),
-                _ => Instruction::InvalidOperation,
+            0xD000 => {
+                Instruction::Draw(
+                    get_first_register(val),
+                    get_second_register(val),
+                    get_value(val),
+                )
+            }
+            0xF000 => {
+                match val & 0x00FF {
+                    0x001E => Instruction::AddIndex(get_first_register(val)),
+                    0x0029 => Instruction::LoadDigit(get_first_register(val)),
+                    0x0055 => Instruction::StoreIndex(get_first_register(val)),
+                    0x0065 => Instruction::ReadIndex(get_first_register(val)),
+                    _ => Instruction::InvalidOperation,
+                }
             }
             _ => Instruction::InvalidOperation,
         }
@@ -120,23 +138,3 @@ fn get_value(val: u16) -> u8 {
 fn get_address(val: u16) -> u16 {
     (val & 0x0FFF)
 }
-
-// Executing: 0x6000
-// Executing: 0x6100
-// Executing: 0xA222
-// Executing: 0xC201
-// Executing: 0x3201
-// Executing: 0xA21E
-// Executing: 0xD014
-// Executing: 0x7004
-// Executing: 0x3040
-// Executing: 0x1204
-// Executing: 0x6000
-// Executing: 0x7104
-// Executing: 0x3120
-// Executing: 0x1204
-// Executing: 0x121C
-// Executing: 0x8040
-// Executing: 0x2010
-// Executing: 0x2040
-// Executing: 0x8010

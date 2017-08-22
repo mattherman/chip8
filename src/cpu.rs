@@ -1,5 +1,5 @@
-use instruction::{ Instruction, Register, Address, Value };
-use display::{ Display, SPRITES, Screen };
+use instruction::{Instruction, Register, Address, Value};
+use display::{Display, SPRITES, Screen};
 use rand;
 use rand::Rng;
 
@@ -26,7 +26,7 @@ impl Cpu {
         for (i, byte) in game_data.iter().enumerate() {
             memory[0x200 + i] = byte.clone();
         }
-        for(i, byte) in SPRITES.iter().enumerate() {
+        for (i, byte) in SPRITES.iter().enumerate() {
             memory[i] = byte.clone();
         }
 
@@ -50,13 +50,18 @@ impl Cpu {
 
     pub fn cycle(&mut self) {
         if self.faulted {
-            return
+            return;
         }
 
         let raw_instruction = self.read_next_instruction();
         let instruction = Instruction::parse(raw_instruction);
 
-        println!("[PC:0x{:X}] [RAW:0x{:04X}] {}", self.pc, raw_instruction, instruction);
+        println!(
+            "[PC:0x{:X}] [RAW:0x{:04X}] {}",
+            self.pc,
+            raw_instruction,
+            instruction
+        );
 
         if instruction == Instruction::InvalidOperation {
             self.faulted = true;
@@ -105,7 +110,7 @@ impl Cpu {
             Instruction::LoadDigit(r) => self.load_digit(r),
             Instruction::StoreIndex(r) => self.store_index(r),
             Instruction::ReadIndex(r) => self.read_index(r),
-            Instruction::InvalidOperation => {},
+            Instruction::InvalidOperation => {}
         };
     }
 
@@ -282,14 +287,14 @@ impl Cpu {
         let y = self.read_register(register2);
 
         let mut sprite = Vec::new();
-        for i in 0..(value-1) {
+        for i in 0..(value - 1) {
             let sprite_index = (self.index + i as u16) as usize;
             sprite.push(self.memory[sprite_index]);
         }
 
         let flipped = self.display.draw_sprite(&sprite, x as usize, y as usize);
         self.set_register(0xF, flipped as u8);
-        
+
         self.pc += INSTRUCTION_SIZE;
     }
 
@@ -314,7 +319,7 @@ impl Cpu {
     }
 
     fn store_index(&mut self, register: Register) {
-        for i in 0..(register+1) {
+        for i in 0..(register + 1) {
             let index = (self.index + i as u16) as usize;
             self.memory[index] = self.read_register(i);
         }
@@ -323,7 +328,7 @@ impl Cpu {
     }
 
     fn read_index(&mut self, register: Register) {
-        for i in 0..(register+1) {
+        for i in 0..(register + 1) {
             let index = (self.index + i as u16) as usize;
             let new_val = self.memory[index];
             self.set_register(i, new_val);
@@ -334,11 +339,35 @@ impl Cpu {
 
     fn debug(&self) {
         let reg = self.registers;
-        println!("V0:{} V1:{} V2:{} V3:{} V4:{} V5:{} V6:{} V7:{}", 
-            reg[0], reg[1], reg[2], reg[3], reg[4], reg[5], reg[6], reg[7]);
-        println!("V8:{} V9:{} VA:{} VB:{} VC:{} VD:{} VE:{} VF:{}", 
-            reg[8], reg[9], reg[10], reg[11], reg[12], reg[13], reg[14], reg[15]);
-        println!("I: 0x{:03X} SP: 0x{:04X} DELAY: {} SOUND: {}", self.index, self.sp, self.del_timer, self.sound_timer);
+        println!(
+            "V0:{} V1:{} V2:{} V3:{} V4:{} V5:{} V6:{} V7:{}",
+            reg[0],
+            reg[1],
+            reg[2],
+            reg[3],
+            reg[4],
+            reg[5],
+            reg[6],
+            reg[7]
+        );
+        println!(
+            "V8:{} V9:{} VA:{} VB:{} VC:{} VD:{} VE:{} VF:{}",
+            reg[8],
+            reg[9],
+            reg[10],
+            reg[11],
+            reg[12],
+            reg[13],
+            reg[14],
+            reg[15]
+        );
+        println!(
+            "I: 0x{:03X} SP: 0x{:04X} DELAY: {} SOUND: {}",
+            self.index,
+            self.sp,
+            self.del_timer,
+            self.sound_timer
+        );
         println!("MEM[I]: 0x{:02X}", self.memory[self.index as usize]);
         println!();
     }
