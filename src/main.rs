@@ -12,7 +12,7 @@ use std::fs::File;
 use std::io::Read;
 use std::env;
 
-const ENLARGEMENT_FACTOR: usize = 1;
+const ENLARGEMENT_FACTOR: u32 = 8;
 const WINDOW_WIDTH: u32 = 64;
 const WINDOW_HEIGHT: u32 = 32;
 
@@ -20,8 +20,8 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let debug = args.len() > 1 && args[1] == "debug";
 
-    let width = WINDOW_WIDTH;
-    let height = WINDOW_HEIGHT;
+    let width = WINDOW_WIDTH * ENLARGEMENT_FACTOR;
+    let height = WINDOW_HEIGHT * ENLARGEMENT_FACTOR;
 
     let mut window = create_window(width, height);
 
@@ -71,8 +71,8 @@ fn draw_screen(event: &Event, screen: &display::Screen, window: &mut PistonWindo
             for (j, val) in row.iter().enumerate() {
                 if *val {
                     let dimensions = [
-                        (j * ENLARGEMENT_FACTOR) as f64,
-                        (i * ENLARGEMENT_FACTOR) as f64,
+                        (j * ENLARGEMENT_FACTOR as usize) as f64,
+                        (i * ENLARGEMENT_FACTOR as usize) as f64,
                         ENLARGEMENT_FACTOR as f64,
                         ENLARGEMENT_FACTOR as f64,
                     ];

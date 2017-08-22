@@ -33,12 +33,20 @@ impl Display {
     // TODO: Please find a better way to do this...it hurts.
     pub fn draw_sprite(&mut self, sprite: &[u8], x: usize, y: usize) {
         for (i, row) in sprite.iter().enumerate() {
-            println!("Drawing sprite row at ({}, {}) => {:b}", y, x, row);
+            println!("Drawing sprite row at ({}, {}) => {:08b}", x, y, row);
             // Ex. 11110000 -> 0 0 0 0 1 1 1 1
             // Because we get them in the reverse order of the indexing
             // we need to use "7-j" for the column index.
             for j in 0..8 {
                 let pixel_val = (row >> j) & 0b1;
+
+                let y_pixel = y + i;
+                let x_pixel = x + (7-j);
+
+                if self.coords_out_of_bounds(x_pixel, y_pixel) {
+                    continue;
+                }
+
                 self.screen[ y + i ][ x + (7-j)] = if pixel_val == 0 {
                     false
                 } else {
@@ -46,5 +54,9 @@ impl Display {
                 };
             }
         }
+    }
+
+    fn coords_out_of_bounds(&self, x: usize, y: usize) -> bool {
+        return y >= HEIGHT || x >= WIDTH;
     }
 }
