@@ -32,6 +32,7 @@ pub enum Instruction {
     SkipIfNotKey(Register),
     AddIndex(Register),
     LoadDigit(Register),
+    LoadBCD(Register),
     StoreIndex(Register),
     ReadIndex(Register),
     InvalidOperation,
@@ -81,6 +82,7 @@ impl Instruction {
                 match val & 0x00FF {
                     0x001E => Instruction::AddIndex(reg1(val)),
                     0x0029 => Instruction::LoadDigit(reg1(val)),
+                    0x0033 => Instruction::LoadBCD(reg1(val)),
                     0x0055 => Instruction::StoreIndex(reg1(val)),
                     0x0065 => Instruction::ReadIndex(reg1(val)),
                     _ => Instruction::InvalidOperation,
@@ -119,6 +121,7 @@ impl fmt::Display for Instruction {
             Instruction::SkipIfNotKey(r) => format!("SKNP V{:X}", r),
             Instruction::AddIndex(r) => format!("ADD I, V{:X}", r),
             Instruction::LoadDigit(r) => format!("LD F, V{:X}", r),
+            Instruction::LoadBCD(r) => format!("LD B, V{:X}", r),
             Instruction::StoreIndex(r) => format!("LD [I], V{:X}", r),
             Instruction::ReadIndex(r) => format!("LD V{:X} [I]", r),
             Instruction::InvalidOperation => format!("INVALID OPERATION"),

@@ -118,6 +118,7 @@ impl Cpu {
             Instruction::SkipIfNotKey(r) => self.skip_not_key(r),
             Instruction::AddIndex(r) => self.add_index(r),
             Instruction::LoadDigit(r) => self.load_digit(r),
+            Instruction::LoadBCD(r) => self.load_bcd(r),
             Instruction::StoreIndex(r) => self.store_index(r),
             Instruction::ReadIndex(r) => self.read_index(r),
             Instruction::InvalidOperation => {}
@@ -374,6 +375,16 @@ impl Cpu {
         // Each digit sprite occupies five bytes of space starting at 0x00
         let sprite_location = 0x00 + (self.read_register(register) as u16 * 5);
         self.index = sprite_location as u16;
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn load_bcd(&mut self, register: Register) {
+        let reg_val = self.read_register(register);
+
+        self.memory[self.index as usize] = reg_val / 100;
+        self.memory[(self.index + 1) as usize] = (reg_val / 10) % 10;
+        self.memory[(self.index + 2) as usize] = (reg_val % 100) % 10;
 
         self.pc += INSTRUCTION_SIZE;
     }
