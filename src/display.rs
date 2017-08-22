@@ -32,7 +32,7 @@ impl Display {
 
     // TODO: Please find a better way to do this...it hurts.
     pub fn draw_sprite(&mut self, sprite: &[u8], x: usize, y: usize) -> bool {
-        let flipped = false;
+        let mut flipped = false;
         for (i, row) in sprite.iter().enumerate() {
             println!("Drawing sprite row at ({}, {}) => {:08b}", x, y, row);
             // Ex. 11110000 -> 0 0 0 0 1 1 1 1
