@@ -56,6 +56,10 @@ impl Display {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.screen = [[false; WIDTH]; HEIGHT];
+    }
+
     fn coords_out_of_bounds(&self, x: usize, y: usize) -> bool {
         return y >= HEIGHT || x >= WIDTH;
     }

@@ -7,31 +7,53 @@ use std::{ fmt };
 #[derive(Debug)]
 #[derive(PartialEq)]
 pub enum Instruction {
-    SetIndexRegister(Address),
-    Random(Register, Value),
-    Draw(Register, Register, Value),
+    Clear,
+    Return,
     Jump(Address),
+    Call(Address),
     SkipIfEqual(Register, Value),
+    SkipIfNotEqual(Register, Value),
     Load(Register, Value),
     Add(Register, Value),
     Assign(Register, Register),
+    SetIndexRegister(Address),
+    Random(Register, Value),
+    Draw(Register, Register, Value),
+    AddStore(Register),
+    LoadDigit(Register),
+    StoreRegisters(Register),
+    ReadRegisters(Register),
     InvalidOperation,
 }
 
 impl Instruction {
     pub fn parse(val: u16) -> Instruction {
         match val & 0xF000 {
-            0xA000 => Instruction::SetIndexRegister(get_address(val)),
-            0xC000 => Instruction::Random(get_first_register(val), get_value(val)),
-            0xD000 => Instruction::Draw(get_first_register(val), get_second_register(val), get_value(val)),
+            0x0000 => match val & 0x000F {
+                0x0000 => Instruction::Clear,
+                0x000E => Instruction::Return,
+                _ => Instruction::InvalidOperation,
+            }
             0x1000 => Instruction::Jump(get_address(val)),
+            0x2000 => Instruction::Call(get_address(val)),
             0x3000 => Instruction::SkipIfEqual(get_first_register(val), get_value(val)),
+            0x4000 => Instruction::SkipIfNotEqual(get_first_register(val), get_value(val)),
             0x6000 => Instruction::Load(get_first_register(val), get_value(val)),
             0x7000 => Instruction::Add(get_first_register(val), get_value(val)),
             0x8000 => match val & 0x000F {
                 0x0000 => Instruction::Assign(get_first_register(val), get_second_register(val)),
                 _ => Instruction::InvalidOperation,
             },
+            0xA000 => Instruction::SetIndexRegister(get_address(val)),
+            0xC000 => Instruction::Random(get_first_register(val), get_value(val)),
+            0xD000 => Instruction::Draw(get_first_register(val), get_second_register(val), get_value(val)),
+            0xF000 => match val & 0x00FF {
+                0x001E => Instruction::AddStore(get_first_register(val)),
+                0x0029 => Instruction::LoadDigit(get_first_register(val)),
+                0x0055 => Instruction::StoreRegisters(get_first_register(val)),
+                0x0065 => Instruction::ReadRegisters(get_first_register(val)),
+                _ => Instruction::InvalidOperation,
+            }
             _ => Instruction::InvalidOperation,
         }
     }
@@ -40,14 +62,22 @@ impl Instruction {
 impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let pretty_instruction = match *self {
-            Instruction::Load(r, v) => format!("LD V{}, {}", r, v),
-            Instruction::SetIndexRegister(a) => format!("LD I, 0x{:X}", a),
-            Instruction::Random(r, v) => format!("RND V{}, {}", r, v),
+            Instruction::Clear => format!("CLS"),
+            Instruction::Return => format!("RET"),
             Instruction::Jump(a) => format!("JP 0x{:X}", a),
-            Instruction::SkipIfEqual(r, v) => format!("SE V{}, {}", r, v),
-            Instruction::Draw(r1, r2, v) => format!("DRW V{}, V{}, {}", r1, r2, v),
-            Instruction::Add(r, v) => format!("ADD V{}, {}", r, v),
-            Instruction::Assign(r1, r2) => format!("LD V{}, V{}", r1, r2),
+            Instruction::Call(a) => format!("CALL 0x{:X}", a),
+            Instruction::SkipIfEqual(r, v) => format!("SE V{:X}, {}", r, v),
+            Instruction::SkipIfNotEqual(r, v) => format!("SNE V{:X}, {}", r, v),
+            Instruction::Load(r, v) => format!("LD V{:X}, {}", r, v),
+            Instruction::Add(r, v) => format!("ADD V{:X}, {}", r, v),
+            Instruction::Assign(r1, r2) => format!("LD V{:X}, V{:X}", r1, r2),
+            Instruction::SetIndexRegister(a) => format!("LD I, 0x{:X}", a),
+            Instruction::Random(r, v) => format!("RND V{:X}, {}", r, v),
+            Instruction::Draw(r1, r2, v) => format!("DRW V{:X}, V{:X}, {}", r1, r2, v),
+            Instruction::AddStore(r) => format!("ADD I, V{:X}", r),
+            Instruction::LoadDigit(r) => format!("LD F, V{:X}", r),
+            Instruction::StoreRegisters(r) => format!("LD [I], V{:X}", r),
+            Instruction::ReadRegisters(r) => format!("LD V{:X} [I]", r),
             Instruction::InvalidOperation => format!("INVALID OPERATION"),
         };
         write!(f, "{}", pretty_instruction)

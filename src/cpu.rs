@@ -54,13 +54,13 @@ impl Cpu {
         let raw_instruction = self.read_next_instruction();
         let instruction = Instruction::parse(raw_instruction);
 
-        println!("[PC:0x{:X}] [RAW:0x{:X}] {}", self.pc, raw_instruction, instruction);
+        println!("[PC:0x{:X}] [RAW:0x{:04X}] {}", self.pc, raw_instruction, instruction);
 
         if instruction == Instruction::InvalidOperation {
             self.faulted = true;
         } else {
             self.execute_instruction(instruction);
-            self.print_registers();
+            //self.print_registers();
             self.handle_timers();
         }
     }
@@ -77,14 +77,22 @@ impl Cpu {
 
     fn execute_instruction(&mut self, instruction: Instruction) {
         match instruction {
-            Instruction::Load(r, v) => self.load_value(r, v),
-            Instruction::SetIndexRegister(a) => self.set_index(a),
-            Instruction::Random(r, v) => self.rand(r, v),
+            Instruction::Clear => self.clear(),
+            Instruction::Return => self.noop(),
             Instruction::Jump(a) => self.jump(a),
+            Instruction::Call(a) => self.call(a),
+            Instruction::Load(r, v) => self.load_value(r, v),            
             Instruction::SkipIfEqual(r, v) => self.skip_equal(r, v),
-            Instruction::Draw(r1, r2, v) => self.draw(r1, r2, v),
+            Instruction::SkipIfNotEqual(r, v) => self.skip_not_equal(r, v),
             Instruction::Add(r, v) => self.add(r, v),
             Instruction::Assign(r1, r2) => self.assign(r1, r2),
+            Instruction::SetIndexRegister(a) => self.set_index(a),
+            Instruction::Random(r, v) => self.rand(r, v),
+            Instruction::Draw(r1, r2, v) => self.draw(r1, r2, v),
+            Instruction::AddStore(r) => self.add_store(r),
+            Instruction::LoadDigit(r) => self.load_digit(r),
+            Instruction::StoreRegisters(r) => self.store_reg(r),
+            Instruction::ReadRegisters(r) => self.read_reg(r),
             Instruction::InvalidOperation => {},
         };
     }
@@ -108,6 +116,10 @@ impl Cpu {
         self.registers[register as usize] = value;
     }
 
+    fn set_program_counter(&mut self, new_addr: Address) {
+        self.pc = new_addr;
+    }
+
     fn noop(&mut self) {
         self.pc += INSTRUCTION_SIZE;
     }
@@ -129,12 +141,28 @@ impl Cpu {
     }
 
     fn jump(&mut self, addr: Address) {
-        self.pc = addr;
+        self.set_program_counter(addr);
+    }
+
+    fn call(&mut self, addr: Address) {
+        self.sp += 1;
+        self.stack[self.sp as usize] = self.pc;
+        self.set_program_counter(addr);
     }
 
     fn skip_equal(&mut self, register: Register, value: Value) {
         let reg_val = self.read_register(register);
         let pc_skip = if reg_val == value {
+            INSTRUCTION_SIZE * 2
+        } else {
+            INSTRUCTION_SIZE
+        };
+        self.pc += pc_skip;
+    }
+
+    fn skip_not_equal(&mut self, register: Register, value: Value) {
+        let reg_val = self.read_register(register);
+        let pc_skip = if reg_val != value {
             INSTRUCTION_SIZE * 2
         } else {
             INSTRUCTION_SIZE
@@ -165,6 +193,46 @@ impl Cpu {
         }
 
         self.display.draw_sprite(&sprite, x as usize, y as usize);
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn clear(&mut self) {
+        self.display.clear();
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn add_store(&mut self, register: Register) {
+        let current = self.memory[self.index as usize];
+        self.memory[self.index as usize] = current + self.read_register(register);
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn load_digit(&mut self, register: Register) {
+        // Each digit sprite occupies five bytes of space starting at 0x00
+        let sprite_location = 0x00 + (self.read_register(register) * 5);
+        self.index = sprite_location as u16;
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn store_reg(&mut self, register: Register) {
+        for i in 0..(register+1) {
+            let index = (self.index + i as u16) as usize;
+            self.memory[index] = self.read_register(i);
+        }
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn read_reg(&mut self, register: Register) {
+        for i in 0..(register+1) {
+            let index = (self.index + i as u16) as usize;
+            let new_val = self.memory[index];
+            self.set_register(i, new_val);
+        }
 
         self.pc += INSTRUCTION_SIZE;
     }
