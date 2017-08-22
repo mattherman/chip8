@@ -8,7 +8,6 @@ mod instruction;
 
 use piston_window::*;
 use cpu::Cpu;
-use display::Display;
 use std::fs::File;
 use std::io::Read;
 use std::env;
@@ -31,11 +30,10 @@ fn main() {
     file.read_to_end(&mut game_data).expect("Unable to read the ROM file.");
 
     let mut cpu = Cpu::new(game_data);
-    let mut display = Display::new();
 
     while let Some(e) = window.next() {
         if let Some(_) = e.render_args() {
-            draw_screen(&e, &display.get_screen(), &mut window);
+            draw_screen(&e, &cpu.get_screen(), &mut window);
         }
         if let Some(button) = e.press_args() {
             if button == Button::Keyboard(Key::Space) && debug {

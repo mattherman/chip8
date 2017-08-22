@@ -26,7 +26,25 @@ impl Display {
         }
     }
 
-    pub fn get_screen(&mut self) -> Screen {
-        self.screen
+    pub fn get_screen(&mut self) -> &Screen {
+        &self.screen
+    }
+
+    // TODO: Please find a better way to do this...it hurts.
+    pub fn draw_sprite(&mut self, sprite: &[u8], x: usize, y: usize) {
+        for (i, row) in sprite.iter().enumerate() {
+            println!("Drawing sprite row at ({}, {}) => {:b}", y, x, row);
+            // Ex. 11110000 -> 0 0 0 0 1 1 1 1
+            // Because we get them in the reverse order of the indexing
+            // we need to use "7-j" for the column index.
+            for j in 0..8 {
+                let pixel_val = (row >> j) & 0b1;
+                self.screen[ y + i ][ x + (7-j)] = if pixel_val == 0 {
+                    false
+                } else {
+                    true
+                };
+            }
+        }
     }
 }

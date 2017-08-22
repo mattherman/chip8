@@ -1,4 +1,5 @@
 use instruction::{ Instruction, Register, Address, Value };
+use display::{ Display, SPRITES, Screen };
 use rand;
 use rand::Rng;
 
@@ -13,6 +14,7 @@ pub struct Cpu {
     sp: u16,
     del_timer: u8,
     sound_timer: u8,
+    pub display: Display,
     pub draw_flag: bool,
     pub faulted: bool,
 }
@@ -23,6 +25,11 @@ impl Cpu {
         for (i, byte) in game_data.iter().enumerate() {
             memory[0x200 + i] = byte.clone();
         }
+        for(i, byte) in SPRITES.iter().enumerate() {
+            memory[i] = byte.clone();
+        }
+
+        let display = Display::new();
 
         Cpu {
             memory: memory,
@@ -33,6 +40,7 @@ impl Cpu {
             sp: 0,
             del_timer: 0,
             sound_timer: 0,
+            display: display,
             draw_flag: false,
             faulted: false,
         }
@@ -57,6 +65,10 @@ impl Cpu {
         }
     }
 
+    pub fn get_screen(&mut self) -> &Screen {
+        self.display.get_screen()
+    }
+
     fn read_next_instruction(&self) -> (u16) {
         let upper = self.memory[self.pc as usize] as u16;
         let lower = self.memory[(self.pc + 1) as usize] as u16;
@@ -70,7 +82,7 @@ impl Cpu {
             Instruction::Random(r, v) => self.rand(r, v),
             Instruction::Jump(a) => self.jump(a),
             Instruction::SkipIfEqual(r, v) => self.skip_equal(r, v),
-            Instruction::Draw(r1, r2, v) => self.skip(),
+            Instruction::Draw(r1, r2, v) => self.draw(r1, r2, v),
             Instruction::Add(r, v) => self.add(r, v),
             Instruction::Assign(r1, r2) => self.assign(r1, r2),
             Instruction::InvalidOperation => {},
@@ -96,8 +108,8 @@ impl Cpu {
         self.registers[register as usize] = value;
     }
 
-    fn skip(&mut self) {
-        self.pc += 2;
+    fn noop(&mut self) {
+        self.pc += INSTRUCTION_SIZE;
     }
 
     fn load_value(&mut self, register: Register, value: Value) {
@@ -133,13 +145,28 @@ impl Cpu {
     fn assign(&mut self, register1: Register, register2: Register) {
         let reg2_val = self.read_register(register2);
         self.set_register(register1, reg2_val);
-        self.pc += 2;
+        self.pc += INSTRUCTION_SIZE;
     }
 
     fn rand(&mut self, register: Register, value: Value) {
         let rand_val = rand::thread_rng().gen::<u8>();
         self.set_register(register, value & rand_val);
-        self.pc += 2;
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn draw(&mut self, register1: Register, register2: Register, value: Value) {
+        let x = self.read_register(register1);
+        let y = self.read_register(register2);
+
+        let mut sprite = Vec::new();
+        for i in 0..(value-1) {
+            let sprite_index = (self.index + i as u16) as usize;
+            sprite.push(self.memory[sprite_index]);
+        }
+
+        self.display.draw_sprite(&sprite, x as usize, y as usize);
+
+        self.pc += INSTRUCTION_SIZE;
     }
 
     fn print_registers(&self) {
