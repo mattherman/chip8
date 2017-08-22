@@ -9,6 +9,7 @@ mod keyboard;
 
 use piston_window::*;
 use cpu::Cpu;
+use keyboard::{ Keyboard, KeyMapping };
 use std::fs::File;
 use std::io::Read;
 use std::env;
@@ -35,6 +36,7 @@ fn main() {
     );
 
     let mut cpu = Cpu::new(game_data, debug);
+    let keyboard = Keyboard::new(KeyMapping::Improved);
 
     while let Some(e) = window.next() {
 
@@ -49,13 +51,13 @@ fn main() {
                 step_forward = true;
             }
 
-            if let Some(key_val) = keyboard::map_key(button) {
+            if let Some(key_val) = keyboard.map_key(button) {
                 cpu.set_key(key_val, true);
             }
         }
 
         if let Some(button) = e.release_args() {
-            if let Some(key_val) = keyboard::map_key(button) {
+            if let Some(key_val) = keyboard.map_key(button) {
                 cpu.set_key(key_val, false);
             }
         }

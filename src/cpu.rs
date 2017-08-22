@@ -86,13 +86,6 @@ impl Cpu {
         self.keys[key as usize] = pressed;
     }
 
-    pub fn reset_keys(&mut self) {
-        let range = self.keys.len() - 1;
-        for i in 0..range {
-            self.keys[i] = false;
-        }
-    }
-
     fn read_next_instruction(&self) -> (u16) {
         let upper = self.memory[self.pc as usize] as u16;
         let lower = self.memory[(self.pc + 1) as usize] as u16;
