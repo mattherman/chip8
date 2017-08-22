@@ -19,30 +19,31 @@ const WINDOW_HEIGHT: u32 = 32;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let debug = args.len() > 1 && args[1] == "debug";
+    let step = args.len() > 2 && args[2] == "step";
 
     let width = WINDOW_WIDTH * ENLARGEMENT_FACTOR;
     let height = WINDOW_HEIGHT * ENLARGEMENT_FACTOR;
 
     let mut window = create_window(width, height);
 
-    let mut file = File::open("/home/matthew/development/chip8-roms/15puzzle.rom").expect("Unable to open the ROM file.");
+    let mut file = File::open("/home/matthew/development/chip8-roms/blinky.rom").expect("Unable to open the ROM file.");
     let mut game_data = Vec::new();
     file.read_to_end(&mut game_data).expect("Unable to read the ROM file.");
 
-    let mut cpu = Cpu::new(game_data);
+    let mut cpu = Cpu::new(game_data, debug);
 
     while let Some(e) = window.next() {
         if let Some(_) = e.render_args() {
             draw_screen(&e, &cpu.get_screen(), &mut window);
         }
         if let Some(button) = e.press_args() {
-            if button == Button::Keyboard(Key::Space) && debug {
+            if button == Button::Keyboard(Key::Space) && step {
                 cpu.cycle();
             }
         };
         
         // If debugging is enabled, only cycle on space bar presses
-        if !debug {
+        if !step {
             cpu.cycle();
         }
         

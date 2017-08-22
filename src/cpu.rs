@@ -17,10 +17,11 @@ pub struct Cpu {
     pub display: Display,
     pub draw_flag: bool,
     pub faulted: bool,
+    pub debug_mode: bool,
 }
 
 impl Cpu {
-    pub fn new(game_data: Vec<u8>) -> Cpu {
+    pub fn new(game_data: Vec<u8>, debug_mode: bool) -> Cpu {
         let mut memory = [0; 4096];
         for (i, byte) in game_data.iter().enumerate() {
             memory[0x200 + i] = byte.clone();
@@ -43,6 +44,7 @@ impl Cpu {
             display: display,
             draw_flag: false,
             faulted: false,
+            debug_mode: debug_mode,
         }
     }
 
@@ -60,8 +62,11 @@ impl Cpu {
             self.faulted = true;
         } else {
             self.execute_instruction(instruction);
-            //self.print_registers();
             self.handle_timers();
+
+            if self.debug_mode {
+                self.debug();
+            }
         }
     }
 
@@ -81,18 +86,25 @@ impl Cpu {
             Instruction::Return => self.noop(),
             Instruction::Jump(a) => self.jump(a),
             Instruction::Call(a) => self.call(a),
-            Instruction::Load(r, v) => self.load_value(r, v),            
+            Instruction::LoadVal(r, v) => self.load_val(r, v),            
             Instruction::SkipIfEqual(r, v) => self.skip_equal(r, v),
             Instruction::SkipIfNotEqual(r, v) => self.skip_not_equal(r, v),
-            Instruction::Add(r, v) => self.add(r, v),
-            Instruction::Assign(r1, r2) => self.assign(r1, r2),
+            Instruction::AddVal(r, v) => self.add_val(r, v),
+            Instruction::LoadReg(r1, r2) => self.load_reg(r1, r2),
+            Instruction::Or(r1, r2) => self.or(r1, r2),
+            Instruction::And(r1, r2) => self.and(r1, r2),
+            Instruction::Xor(r1, r2) => self.xor(r1, r2),
+            Instruction::AddReg(r1, r2) => self.add_reg(r1, r2),
+            Instruction::SubReg(r1, r2) => self.sub_reg(r1, r2),
+            Instruction::ShiftRight(r) => self.shift_right(r),
+            Instruction::ShiftLeft(r) => self.shift_left(r),
             Instruction::SetIndexRegister(a) => self.set_index(a),
             Instruction::Random(r, v) => self.rand(r, v),
             Instruction::Draw(r1, r2, v) => self.draw(r1, r2, v),
-            Instruction::AddStore(r) => self.add_store(r),
+            Instruction::AddIndex(r) => self.add_index(r),
             Instruction::LoadDigit(r) => self.load_digit(r),
-            Instruction::StoreRegisters(r) => self.store_reg(r),
-            Instruction::ReadRegisters(r) => self.read_reg(r),
+            Instruction::StoreIndex(r) => self.store_index(r),
+            Instruction::ReadIndex(r) => self.read_index(r),
             Instruction::InvalidOperation => {},
         };
     }
@@ -124,14 +136,73 @@ impl Cpu {
         self.pc += INSTRUCTION_SIZE;
     }
 
-    fn load_value(&mut self, register: Register, value: Value) {
+    fn load_val(&mut self, register: Register, value: Value) {
         self.set_register(register, value);
         self.pc += INSTRUCTION_SIZE;
     }
 
-    fn add(&mut self, register: Register, value: Value) {
+    fn add_val(&mut self, register: Register, value: Value) {
         let current_value = self.read_register(register);
         self.set_register(register, current_value + value);
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn add_reg(&mut self, register1: Register, register2: Register) {
+        let reg1_val = self.read_register(register1);
+        let reg2_val = self.read_register(register2);
+
+        let new_val: u8;
+        let carry_val: u8;
+        if let Some(result) = reg1_val.checked_add(reg2_val) {
+            new_val = result;
+            carry_val = 0;
+        } else {
+            // Overflow!
+            // Take lower 8 bits of full addition result
+            new_val = (reg1_val as u16 + reg2_val as u16) as u8;
+            carry_val = 1;
+        }
+
+        self.set_register(register1, new_val);
+        self.set_register(0xF, carry_val);
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn sub_reg(&mut self, register1: Register, register2: Register) {
+        let reg1_val = self.read_register(register1);
+        let reg2_val = self.read_register(register2);
+
+        let new_val: u8;
+        let borrow_val: u8;
+        if let Some(result) = reg1_val.checked_sub(reg2_val) {
+            new_val = result;
+            borrow_val = 1;
+        } else {
+            new_val = (reg1_val as i8 - reg2_val as i8) as u8;
+            borrow_val = 0;
+        }
+
+        self.set_register(register1, new_val);
+        self.set_register(0xF, borrow_val);
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn shift_right(&mut self, register: Register) {
+        let reg_val = self.read_register(register);
+        self.set_register(0xF, 0b00000001 & reg_val);
+        self.set_register(register, reg_val >> 1);
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn shift_left(&mut self, register: Register) {
+        let reg_val = self.read_register(register);
+        self.set_register(0xF, 0b10000000 & reg_val);
+        self.set_register(register, reg_val << 1);
+
         self.pc += INSTRUCTION_SIZE;
     }
 
@@ -170,9 +241,33 @@ impl Cpu {
         self.pc += pc_skip;
     }
 
-    fn assign(&mut self, register1: Register, register2: Register) {
+    fn load_reg(&mut self, register1: Register, register2: Register) {
         let reg2_val = self.read_register(register2);
         self.set_register(register1, reg2_val);
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn or(&mut self, register1: Register, register2: Register) {
+        let reg1_val = self.read_register(register1);
+        let reg2_val = self.read_register(register2);
+        self.set_register(register1, reg1_val | reg2_val);
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn and(&mut self, register1: Register, register2: Register) {
+        let reg1_val = self.read_register(register1);
+        let reg2_val = self.read_register(register2);
+        self.set_register(register1, reg1_val & reg2_val);
+
+        self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn xor(&mut self, register1: Register, register2: Register) {
+        let reg1_val = self.read_register(register1);
+        let reg2_val = self.read_register(register2);
+        self.set_register(register1, reg1_val ^ reg2_val);
+
         self.pc += INSTRUCTION_SIZE;
     }
 
@@ -203,22 +298,21 @@ impl Cpu {
         self.pc += INSTRUCTION_SIZE;
     }
 
-    fn add_store(&mut self, register: Register) {
-        let current = self.memory[self.index as usize];
-        self.memory[self.index as usize] = current + self.read_register(register);
+    fn add_index(&mut self, register: Register) {
+        self.index += self.read_register(register) as u16;
 
         self.pc += INSTRUCTION_SIZE;
     }
 
     fn load_digit(&mut self, register: Register) {
         // Each digit sprite occupies five bytes of space starting at 0x00
-        let sprite_location = 0x00 + (self.read_register(register) * 5);
+        let sprite_location = 0x00 + (self.read_register(register) as u16 * 5);
         self.index = sprite_location as u16;
 
         self.pc += INSTRUCTION_SIZE;
     }
 
-    fn store_reg(&mut self, register: Register) {
+    fn store_index(&mut self, register: Register) {
         for i in 0..(register+1) {
             let index = (self.index + i as u16) as usize;
             self.memory[index] = self.read_register(i);
@@ -227,7 +321,7 @@ impl Cpu {
         self.pc += INSTRUCTION_SIZE;
     }
 
-    fn read_reg(&mut self, register: Register) {
+    fn read_index(&mut self, register: Register) {
         for i in 0..(register+1) {
             let index = (self.index + i as u16) as usize;
             let new_val = self.memory[index];
@@ -237,11 +331,14 @@ impl Cpu {
         self.pc += INSTRUCTION_SIZE;
     }
 
-    fn print_registers(&self) {
+    fn debug(&self) {
         let reg = self.registers;
         println!("V0:{} V1:{} V2:{} V3:{} V4:{} V5:{} V6:{} V7:{}", 
             reg[0], reg[1], reg[2], reg[3], reg[4], reg[5], reg[6], reg[7]);
         println!("V8:{} V9:{} VA:{} VB:{} VC:{} VD:{} VE:{} VF:{}", 
             reg[8], reg[9], reg[10], reg[11], reg[12], reg[13], reg[14], reg[15]);
+        println!("I: 0x{:03X} SP: 0x{:04X} DELAY: {} SOUND: {}", self.index, self.sp, self.del_timer, self.sound_timer);
+        println!("MEM[I]: 0x{:02X}", self.memory[self.index as usize]);
+        println!();
     }
 }
