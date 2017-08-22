@@ -9,10 +9,12 @@ use std::fmt;
 pub enum Instruction {
     Clear,
     Return,
+    ExRoutine(Address),
     Jump(Address),
     Call(Address),
     SkipIfEqual(Register, Value),
     SkipIfNotEqual(Register, Value),
+    SkipIfRegEqual(Register, Register),
     LoadVal(Register, Value),
     AddVal(Register, Value),
     LoadReg(Register, Register),
@@ -26,6 +28,8 @@ pub enum Instruction {
     SetIndexRegister(Address),
     Random(Register, Value),
     Draw(Register, Register, Value),
+    SkipIfKey(Register),
+    SkipIfNotKey(Register),
     AddIndex(Register),
     LoadDigit(Register),
     StoreIndex(Register),
@@ -37,16 +41,17 @@ impl Instruction {
     pub fn parse(val: u16) -> Instruction {
         match val & 0xF000 {
             0x0000 => {
-                match val & 0x000F {
-                    0x0000 => Instruction::Clear,
+                match val & 0x0FFF {
+                    0x00E0 => Instruction::Clear,
                     0x000E => Instruction::Return,
-                    _ => Instruction::InvalidOperation,
+                    _ => Instruction::ExRoutine(addr(val)),
                 }
             }
             0x1000 => Instruction::Jump(addr(val)),
             0x2000 => Instruction::Call(addr(val)),
             0x3000 => Instruction::SkipIfEqual(reg1(val), value(val)),
             0x4000 => Instruction::SkipIfNotEqual(reg1(val), value(val)),
+            0x5000 => Instruction::SkipIfRegEqual(reg1(val), reg2(val)),
             0x6000 => Instruction::LoadVal(reg1(val), value(val)),
             0x7000 => Instruction::AddVal(reg1(val), value(val)),
             0x8000 => {
@@ -65,6 +70,13 @@ impl Instruction {
             0xA000 => Instruction::SetIndexRegister(addr(val)),
             0xC000 => Instruction::Random(reg1(val), value(val)),
             0xD000 => Instruction::Draw(reg1(val), reg2(val), value(val)),
+            0xE000 => {
+                match val & 0x00FF {
+                    0x009E => Instruction::SkipIfKey(reg1(val)),
+                    0x00A1 => Instruction::SkipIfNotKey(reg1(val)),
+                    _ => Instruction::InvalidOperation,
+                }
+            },
             0xF000 => {
                 match val & 0x00FF {
                     0x001E => Instruction::AddIndex(reg1(val)),
@@ -84,10 +96,12 @@ impl fmt::Display for Instruction {
         let pretty_instruction = match *self {
             Instruction::Clear => format!("CLS"),
             Instruction::Return => format!("RET"),
+            Instruction::ExRoutine(a) => format!("SYS 0x{:X}", a),
             Instruction::Jump(a) => format!("JP 0x{:X}", a),
             Instruction::Call(a) => format!("CALL 0x{:X}", a),
             Instruction::SkipIfEqual(r, v) => format!("SE V{:X}, {}", r, v),
             Instruction::SkipIfNotEqual(r, v) => format!("SNE V{:X}, {}", r, v),
+            Instruction::SkipIfRegEqual(r1, r2) => format!("SE V{:X}, V{:X}", r1, r2),
             Instruction::LoadVal(r, v) => format!("LD V{:X}, {}", r, v),
             Instruction::AddVal(r, v) => format!("ADD V{:X}, {}", r, v),
             Instruction::LoadReg(r1, r2) => format!("LD V{:X}, V{:X}", r1, r2),
@@ -101,6 +115,8 @@ impl fmt::Display for Instruction {
             Instruction::SetIndexRegister(a) => format!("LD I, 0x{:X}", a),
             Instruction::Random(r, v) => format!("RND V{:X}, {}", r, v),
             Instruction::Draw(r1, r2, v) => format!("DRW V{:X}, V{:X}, {}", r1, r2, v),
+            Instruction::SkipIfKey(r) => format!("SKP V{:X}", r),
+            Instruction::SkipIfNotKey(r) => format!("SKNP V{:X}", r),
             Instruction::AddIndex(r) => format!("ADD I, V{:X}", r),
             Instruction::LoadDigit(r) => format!("LD F, V{:X}", r),
             Instruction::StoreIndex(r) => format!("LD [I], V{:X}", r),

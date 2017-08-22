@@ -15,10 +15,10 @@ pub struct Cpu {
     del_timer: u8,
     sound_timer: u8,
     keys: [bool; 16],
+    debug_mode: bool,
     pub display: Display,
     pub draw_flag: bool,
     pub faulted: bool,
-    pub debug_mode: bool,
 }
 
 impl Cpu {
@@ -58,12 +58,12 @@ impl Cpu {
         let raw_instruction = self.read_next_instruction();
         let instruction = Instruction::parse(raw_instruction);
 
-        // println!(
-        //     "[PC:0x{:X}] [RAW:0x{:04X}] {}",
-        //     self.pc,
-        //     raw_instruction,
-        //     instruction
-        // );
+        println!(
+            "[PC:0x{:X}] [RAW:0x{:04X}] {}",
+            self.pc,
+            raw_instruction,
+            instruction
+        );
 
         if instruction == Instruction::InvalidOperation {
             self.faulted = true;
@@ -82,7 +82,6 @@ impl Cpu {
     }
     
     pub fn set_key(&mut self, key: u8, pressed: bool) {
-        println!("Set keys[0x{:X}] to {}", key, pressed);
         self.keys[key as usize] = pressed;
     }
 
@@ -95,12 +94,14 @@ impl Cpu {
     fn execute_instruction(&mut self, instruction: Instruction) {
         match instruction {
             Instruction::Clear => self.clear(),
-            Instruction::Return => self.noop(),
+            Instruction::Return => self.ret(),
+            Instruction::ExRoutine(a) => self.noop(), // Not sure how to implement this
             Instruction::Jump(a) => self.jump(a),
             Instruction::Call(a) => self.call(a),
             Instruction::LoadVal(r, v) => self.load_val(r, v),            
             Instruction::SkipIfEqual(r, v) => self.skip_equal(r, v),
             Instruction::SkipIfNotEqual(r, v) => self.skip_not_equal(r, v),
+            Instruction::SkipIfRegEqual(r1, r2) => self.skip_reg_equal(r1, r2),
             Instruction::AddVal(r, v) => self.add_val(r, v),
             Instruction::LoadReg(r1, r2) => self.load_reg(r1, r2),
             Instruction::Or(r1, r2) => self.or(r1, r2),
@@ -113,6 +114,8 @@ impl Cpu {
             Instruction::SetIndexRegister(a) => self.set_index(a),
             Instruction::Random(r, v) => self.rand(r, v),
             Instruction::Draw(r1, r2, v) => self.draw(r1, r2, v),
+            Instruction::SkipIfKey(r) => self.skip_key(r),
+            Instruction::SkipIfNotKey(r) => self.skip_not_key(r),
             Instruction::AddIndex(r) => self.add_index(r),
             Instruction::LoadDigit(r) => self.load_digit(r),
             Instruction::StoreIndex(r) => self.store_index(r),
@@ -142,6 +145,17 @@ impl Cpu {
 
     fn set_program_counter(&mut self, new_addr: Address) {
         self.pc = new_addr;
+    }
+
+    fn push_stack(&mut self, value: u16) {
+        self.sp += 1;
+        self.stack[self.sp as usize] = value;
+    }
+
+    fn pop_stack(&mut self) -> u16 {
+        let val = self.stack[self.sp as usize];
+        self.sp -= 1;
+        val
     }
 
     fn noop(&mut self) {
@@ -231,9 +245,14 @@ impl Cpu {
     }
 
     fn call(&mut self, addr: Address) {
-        self.sp += 1;
-        self.stack[self.sp as usize] = self.pc;
+        let current_pc = self.pc;
+        self.push_stack(current_pc);
         self.set_program_counter(addr);
+    }
+
+    fn ret(&mut self) {
+        let previous_pc = self.pop_stack();
+        self.set_program_counter(previous_pc);
     }
 
     fn skip_equal(&mut self, register: Register, value: Value) {
@@ -249,6 +268,17 @@ impl Cpu {
     fn skip_not_equal(&mut self, register: Register, value: Value) {
         let reg_val = self.read_register(register);
         let pc_skip = if reg_val != value {
+            INSTRUCTION_SIZE * 2
+        } else {
+            INSTRUCTION_SIZE
+        };
+        self.pc += pc_skip;
+    }
+
+    fn skip_reg_equal(&mut self, register1: Register, register2: Register) {
+        let reg_val1 = self.read_register(register1);
+        let reg_val2 = self.read_register(register2);
+        let pc_skip = if reg_val1 == reg_val2 {
             INSTRUCTION_SIZE * 2
         } else {
             INSTRUCTION_SIZE
@@ -312,6 +342,26 @@ impl Cpu {
         self.display.clear();
 
         self.pc += INSTRUCTION_SIZE;
+    }
+
+    fn skip_key(&mut self, register: Register) {
+        let reg_val = self.read_register(register);
+        let pc_skip = if self.keys[reg_val as usize] {
+            INSTRUCTION_SIZE * 2
+        } else {
+            INSTRUCTION_SIZE
+        };
+        self.pc += pc_skip;
+    }
+
+    fn skip_not_key(&mut self, register: Register) {
+        let reg_val = self.read_register(register);
+        let pc_skip = if self.keys[reg_val as usize] {
+            INSTRUCTION_SIZE
+        } else {
+            INSTRUCTION_SIZE * 2
+        };
+        self.pc += pc_skip;
     }
 
     fn add_index(&mut self, register: Register) {
