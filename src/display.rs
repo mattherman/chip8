@@ -31,7 +31,8 @@ impl Display {
     }
 
     // TODO: Please find a better way to do this...it hurts.
-    pub fn draw_sprite(&mut self, sprite: &[u8], x: usize, y: usize) {
+    pub fn draw_sprite(&mut self, sprite: &[u8], x: usize, y: usize) -> bool {
+        let flipped = false;
         for (i, row) in sprite.iter().enumerate() {
             println!("Drawing sprite row at ({}, {}) => {:08b}", x, y, row);
             // Ex. 11110000 -> 0 0 0 0 1 1 1 1
@@ -47,13 +48,16 @@ impl Display {
                     continue;
                 }
 
-                self.screen[ y + i ][ x + (7-j)] = if pixel_val == 0 {
-                    false
-                } else {
-                    true
-                };
+                let current_val = self.screen[ y + i ][ x + (7-j)];
+                let new_val = pixel_val != 0;
+
+                self.screen[ y + i ][ x + (7-j)] = new_val;
+
+                flipped = flipped || (current_val && !new_val);
             }
         }
+
+        flipped
     }
 
     pub fn clear(&mut self) {

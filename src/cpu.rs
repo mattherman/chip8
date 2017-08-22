@@ -287,8 +287,9 @@ impl Cpu {
             sprite.push(self.memory[sprite_index]);
         }
 
-        self.display.draw_sprite(&sprite, x as usize, y as usize);
-
+        let flipped = self.display.draw_sprite(&sprite, x as usize, y as usize);
+        self.set_register(0xF, flipped as u8);
+        
         self.pc += INSTRUCTION_SIZE;
     }
 
