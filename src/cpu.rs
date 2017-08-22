@@ -14,6 +14,7 @@ pub struct Cpu {
     sp: u16,
     del_timer: u8,
     sound_timer: u8,
+    keys: [bool; 16],
     pub display: Display,
     pub draw_flag: bool,
     pub faulted: bool,
@@ -42,6 +43,7 @@ impl Cpu {
             del_timer: 0,
             sound_timer: 0,
             display: display,
+            keys: [false; 16],
             draw_flag: false,
             faulted: false,
             debug_mode: debug_mode,
@@ -77,6 +79,10 @@ impl Cpu {
 
     pub fn get_screen(&mut self) -> &Screen {
         self.display.get_screen()
+    }
+    
+    pub fn set_key(&mut self, key: u8, pressed: bool) {
+        self.keys[key as usize] = pressed;
     }
 
     fn read_next_instruction(&self) -> (u16) {
@@ -146,9 +152,12 @@ impl Cpu {
         self.pc += INSTRUCTION_SIZE;
     }
 
+    // TODO: It is not clear whether this should overflow. Docs make it clear
+    // that it should not affect VF, but they don't specify what should happen
+    // during overflow. For now I am going to let it wrap.
     fn add_val(&mut self, register: Register, value: Value) {
         let current_value = self.read_register(register);
-        self.set_register(register, current_value + value);
+        self.set_register(register, current_value.wrapping_add(value));
 
         self.pc += INSTRUCTION_SIZE;
     }
@@ -369,6 +378,29 @@ impl Cpu {
             self.sound_timer
         );
         println!("MEM[I]: 0x{:02X}", self.memory[self.index as usize]);
+        let keys = self.keys;
+        println!(
+            "K0:{} K1:{} K2:{} K3:{} K4:{} K5:{} K6:{} K7:{}",
+            keys[0],
+            keys[1],
+            keys[2],
+            keys[3],
+            keys[4],
+            keys[5],
+            keys[6],
+            keys[7]
+        );
+        println!(
+            "K8:{} K9:{} KA:{} KB:{} KC:{} KD:{} KE:{} KF:{}",
+            keys[8],
+            keys[9],
+            keys[10],
+            keys[11],
+            keys[12],
+            keys[13],
+            keys[14],
+            keys[15]
+        );
         println!();
     }
 }

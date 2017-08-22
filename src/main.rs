@@ -5,6 +5,7 @@ extern crate rand;
 mod cpu;
 mod display;
 mod instruction;
+mod keyboard;
 
 use piston_window::*;
 use cpu::Cpu;
@@ -40,16 +41,23 @@ fn main() {
             draw_screen(&e, &cpu.get_screen(), &mut window);
         }
         if let Some(button) = e.press_args() {
+            if let Some(key_val) = keyboard::map_key(button) {
+                cpu.set_key(key_val, true);
+            }
             if button == Button::Keyboard(Key::Space) && step {
                 cpu.cycle();
             }
         };
+        if let Some(button) = e.release_args() {
+            if let Some(key_val) = keyboard::map_key(button) {
+                cpu.set_key(key_val, false);
+            }
+        }
 
         // If debugging is enabled, only cycle on space bar presses
         if !step {
             cpu.cycle();
         }
-
     }
 }
 
