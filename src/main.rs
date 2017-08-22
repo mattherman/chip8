@@ -37,25 +37,31 @@ fn main() {
     let mut cpu = Cpu::new(game_data, debug);
 
     while let Some(e) = window.next() {
+
+        let mut step_forward = false;
+
         if let Some(_) = e.render_args() {
             draw_screen(&e, &cpu.get_screen(), &mut window);
         }
+
         if let Some(button) = e.press_args() {
+            if button == Button::Keyboard(Key::Space) && step {
+                step_forward = true;
+            }
+
             if let Some(key_val) = keyboard::map_key(button) {
                 cpu.set_key(key_val, true);
             }
-            if button == Button::Keyboard(Key::Space) && step {
-                cpu.cycle();
-            }
-        };
+        }
+
         if let Some(button) = e.release_args() {
             if let Some(key_val) = keyboard::map_key(button) {
                 cpu.set_key(key_val, false);
             }
         }
-
+        
         // If debugging is enabled, only cycle on space bar presses
-        if !step {
+        if !step || step_forward {
             cpu.cycle();
         }
     }

@@ -58,12 +58,12 @@ impl Cpu {
         let raw_instruction = self.read_next_instruction();
         let instruction = Instruction::parse(raw_instruction);
 
-        println!(
-            "[PC:0x{:X}] [RAW:0x{:04X}] {}",
-            self.pc,
-            raw_instruction,
-            instruction
-        );
+        // println!(
+        //     "[PC:0x{:X}] [RAW:0x{:04X}] {}",
+        //     self.pc,
+        //     raw_instruction,
+        //     instruction
+        // );
 
         if instruction == Instruction::InvalidOperation {
             self.faulted = true;
@@ -82,7 +82,15 @@ impl Cpu {
     }
     
     pub fn set_key(&mut self, key: u8, pressed: bool) {
+        println!("Set keys[0x{:X}] to {}", key, pressed);
         self.keys[key as usize] = pressed;
+    }
+
+    pub fn reset_keys(&mut self) {
+        let range = self.keys.len() - 1;
+        for i in 0..range {
+            self.keys[i] = false;
+        }
     }
 
     fn read_next_instruction(&self) -> (u16) {
