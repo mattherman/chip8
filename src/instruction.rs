@@ -43,46 +43,34 @@ impl Instruction {
                     _ => Instruction::InvalidOperation,
                 }
             }
-            0x1000 => Instruction::Jump(get_address(val)),
-            0x2000 => Instruction::Call(get_address(val)),
-            0x3000 => Instruction::SkipIfEqual(get_first_register(val), get_value(val)),
-            0x4000 => Instruction::SkipIfNotEqual(get_first_register(val), get_value(val)),
-            0x6000 => Instruction::LoadVal(get_first_register(val), get_value(val)),
-            0x7000 => Instruction::AddVal(get_first_register(val), get_value(val)),
+            0x1000 => Instruction::Jump(addr(val)),
+            0x2000 => Instruction::Call(addr(val)),
+            0x3000 => Instruction::SkipIfEqual(reg1(val), value(val)),
+            0x4000 => Instruction::SkipIfNotEqual(reg1(val), value(val)),
+            0x6000 => Instruction::LoadVal(reg1(val), value(val)),
+            0x7000 => Instruction::AddVal(reg1(val), value(val)),
             0x8000 => {
                 match val & 0x000F {
-                    0x0000 => {
-                        Instruction::LoadReg(get_first_register(val), get_second_register(val))
-                    }
-                    0x0001 => Instruction::Or(get_first_register(val), get_second_register(val)),
-                    0x0002 => Instruction::And(get_first_register(val), get_second_register(val)),
-                    0x0003 => Instruction::Xor(get_first_register(val), get_second_register(val)),
-                    0x0004 => {
-                        Instruction::AddReg(get_first_register(val), get_second_register(val))
-                    }
-                    0x0005 => {
-                        Instruction::SubReg(get_first_register(val), get_second_register(val))
-                    }
-                    0x0006 => Instruction::ShiftRight(get_first_register(val)),
-                    0x000E => Instruction::ShiftLeft(get_first_register(val)),
+                    0x0000 => Instruction::LoadReg(reg1(val), reg2(val)),
+                    0x0001 => Instruction::Or(reg1(val), reg2(val)),
+                    0x0002 => Instruction::And(reg1(val), reg2(val)),
+                    0x0003 => Instruction::Xor(reg1(val), reg2(val)),
+                    0x0004 => Instruction::AddReg(reg1(val), reg2(val)),
+                    0x0005 => Instruction::SubReg(reg1(val), reg2(val)),
+                    0x0006 => Instruction::ShiftRight(reg1(val)),
+                    0x000E => Instruction::ShiftLeft(reg1(val)),
                     _ => Instruction::InvalidOperation,
                 }
             }
-            0xA000 => Instruction::SetIndexRegister(get_address(val)),
-            0xC000 => Instruction::Random(get_first_register(val), get_value(val)),
-            0xD000 => {
-                Instruction::Draw(
-                    get_first_register(val),
-                    get_second_register(val),
-                    get_value(val),
-                )
-            }
+            0xA000 => Instruction::SetIndexRegister(addr(val)),
+            0xC000 => Instruction::Random(reg1(val), value(val)),
+            0xD000 => Instruction::Draw(reg1(val), reg2(val), value(val)),
             0xF000 => {
                 match val & 0x00FF {
-                    0x001E => Instruction::AddIndex(get_first_register(val)),
-                    0x0029 => Instruction::LoadDigit(get_first_register(val)),
-                    0x0055 => Instruction::StoreIndex(get_first_register(val)),
-                    0x0065 => Instruction::ReadIndex(get_first_register(val)),
+                    0x001E => Instruction::AddIndex(reg1(val)),
+                    0x0029 => Instruction::LoadDigit(reg1(val)),
+                    0x0055 => Instruction::StoreIndex(reg1(val)),
+                    0x0065 => Instruction::ReadIndex(reg1(val)),
                     _ => Instruction::InvalidOperation,
                 }
             }
@@ -123,18 +111,18 @@ impl fmt::Display for Instruction {
     }
 }
 
-fn get_first_register(val: u16) -> u8 {
+fn reg1(val: u16) -> u8 {
     ((val & 0x0F00) >> 8) as u8
 }
 
-fn get_second_register(val: u16) -> u8 {
+fn reg2(val: u16) -> u8 {
     ((val & 0x00F0) >> 4) as u8
 }
 
-fn get_value(val: u16) -> u8 {
+fn value(val: u16) -> u8 {
     (val & 0x00FF) as u8
 }
 
-fn get_address(val: u16) -> u16 {
+fn addr(val: u16) -> u16 {
     (val & 0x0FFF)
 }
