@@ -25,17 +25,20 @@ impl Display {
             // Because we get them in the reverse order of the indexing
             // we need to use "7-j" for the column index.
             for j in 0..8 {
-                let pixel_val = (row >> j) & 0b1;
+                let pixel = (row >> j) & 0b1;
 
                 let y_pixel = y + i;
                 let x_pixel = x + (7 - j);
 
+                // TODO: Wrap this instead of refusing to draw the pixel
                 if self.coords_out_of_bounds(x_pixel, y_pixel) {
                     continue;
                 }
 
                 let current_val = self.screen[y + i][x + (7 - j)];
-                let new_val = pixel_val != 0;
+                let pixel_val = pixel != 0;
+
+                let new_val = current_val ^ pixel_val;
 
                 self.screen[y + i][x + (7 - j)] = new_val;
 
