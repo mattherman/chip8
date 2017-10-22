@@ -31,7 +31,7 @@ impl Cpu {
             memory[i] = byte.clone();
         }
 
-        let display = Display::new();
+        let display = Display::new(debug_mode);
 
         Cpu {
             memory: memory,
@@ -98,7 +98,7 @@ impl Cpu {
             Instruction::ExRoutine(a) => self.noop(), // Not sure how to implement this
             Instruction::Jump(a) => self.jump(a),
             Instruction::Call(a) => self.call(a),
-            Instruction::LoadVal(r, v) => self.load_val(r, v),            
+            Instruction::LoadVal(r, v) => self.load_val(r, v),
             Instruction::SkipIfEqual(r, v) => self.skip_equal(r, v),
             Instruction::SkipIfNotEqual(r, v) => self.skip_not_equal(r, v),
             Instruction::SkipIfRegEqual(r1, r2) => self.skip_reg_equal(r1, r2),
@@ -328,7 +328,7 @@ impl Cpu {
         let y = self.read_register(register2);
 
         let mut sprite = Vec::new();
-        for i in 0..(value - 1) {
+        for i in 0..value {
             let sprite_index = (self.index + i as u16) as usize;
             sprite.push(self.memory[sprite_index]);
         }

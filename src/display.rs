@@ -5,11 +5,12 @@ pub type Screen = [[bool; WIDTH]; HEIGHT];
 
 pub struct Display {
     screen: Screen,
+    debug_mode: bool
 }
 
 impl Display {
-    pub fn new() -> Display {
-        Display { screen: [[false; WIDTH]; HEIGHT] }
+    pub fn new(debug_mode: bool) -> Display {
+        Display { screen: [[false; WIDTH]; HEIGHT], debug_mode: debug_mode }
     }
 
     pub fn get_screen(&mut self) -> &Screen {
@@ -20,7 +21,11 @@ impl Display {
     pub fn draw_sprite(&mut self, sprite: &[u8], x: usize, y: usize) -> bool {
         let mut flipped = false;
         for (i, row) in sprite.iter().enumerate() {
-            //println!("Drawing sprite row at ({}, {}) => {:08b}", x, y, row);
+
+            if self.debug_mode {
+                println!("Drawing sprite row at ({}, {}) => {:08b}", x, y, row);
+            }
+            
             // Ex. 11110000 -> 0 0 0 0 1 1 1 1
             // Because we get them in the reverse order of the indexing
             // we need to use "7-j" for the column index.

@@ -28,8 +28,9 @@ fn main() {
 
     let mut window = create_window(width, height);
 
-    let mut file = File::open("/home/matt/Development/chip8/roms/15puzzle.rom")
+    let mut file = File::open("/home/matt/Development/chip8/roms/pong.rom")
         .expect("Unable to open the ROM file.");
+
     let mut game_data = Vec::new();
     file.read_to_end(&mut game_data).expect(
         "Unable to read the ROM file.",

@@ -44,17 +44,17 @@ impl Instruction {
             0x0000 => {
                 match val & 0x0FFF {
                     0x00E0 => Instruction::Clear,
-                    0x000E => Instruction::Return,
+                    0x00EE => Instruction::Return,
                     _ => Instruction::ExRoutine(addr(val)),
                 }
             }
             0x1000 => Instruction::Jump(addr(val)),
             0x2000 => Instruction::Call(addr(val)),
-            0x3000 => Instruction::SkipIfEqual(reg1(val), value(val)),
-            0x4000 => Instruction::SkipIfNotEqual(reg1(val), value(val)),
+            0x3000 => Instruction::SkipIfEqual(reg1(val), byte(val)),
+            0x4000 => Instruction::SkipIfNotEqual(reg1(val), byte(val)),
             0x5000 => Instruction::SkipIfRegEqual(reg1(val), reg2(val)),
-            0x6000 => Instruction::LoadVal(reg1(val), value(val)),
-            0x7000 => Instruction::AddVal(reg1(val), value(val)),
+            0x6000 => Instruction::LoadVal(reg1(val), byte(val)),
+            0x7000 => Instruction::AddVal(reg1(val), byte(val)),
             0x8000 => {
                 match val & 0x000F {
                     0x0000 => Instruction::LoadReg(reg1(val), reg2(val)),
@@ -69,8 +69,8 @@ impl Instruction {
                 }
             }
             0xA000 => Instruction::SetIndexRegister(addr(val)),
-            0xC000 => Instruction::Random(reg1(val), value(val)),
-            0xD000 => Instruction::Draw(reg1(val), reg2(val), value(val)),
+            0xC000 => Instruction::Random(reg1(val), byte(val)),
+            0xD000 => Instruction::Draw(reg1(val), reg2(val), nibble(val)),
             0xE000 => {
                 match val & 0x00FF {
                     0x009E => Instruction::SkipIfKey(reg1(val)),
@@ -138,8 +138,12 @@ fn reg2(val: u16) -> u8 {
     ((val & 0x00F0) >> 4) as u8
 }
 
-fn value(val: u16) -> u8 {
+fn byte(val: u16) -> u8 {
     (val & 0x00FF) as u8
+}
+
+fn nibble(val: u16) -> u8 {
+    (val & 0x000F) as u8
 }
 
 fn addr(val: u16) -> u16 {
