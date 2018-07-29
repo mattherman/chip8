@@ -28,7 +28,7 @@ fn main() {
 
     let mut window = create_window(width, height);
 
-    let mut file = File::open("/home/matt/Development/chip8/roms/pong.rom")
+    let mut file = File::open("/home/matt/Development/chip8/roms/15puzzle.rom")
         .expect("Unable to open the ROM file.");
 
     let mut game_data = Vec::new();
@@ -108,3 +108,12 @@ fn draw_screen(event: &Event, screen: &display::Screen, window: &mut PistonWindo
         }
     });
 }
+
+
+// TODO:
+// 1) Fix display issues, it is currently not working at all
+//     a) This might (and probably should) involve rewriting the display logic
+// 2) Add command line argument for ROM file
+// 3) Fix command line arguments, potentially add a create for arg parsing (docopt?)
+// 4) Keyboard scheme?
+// 5) The display should really be separate from the cpu....not sure how to do this though

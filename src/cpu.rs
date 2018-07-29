@@ -95,7 +95,7 @@ impl Cpu {
         match instruction {
             Instruction::Clear => self.clear(),
             Instruction::Return => self.ret(),
-            Instruction::ExRoutine(a) => self.noop(), // Not sure how to implement this
+            Instruction::ExRoutine(_a) => self.noop(), // Not sure how to implement this
             Instruction::Jump(a) => self.jump(a),
             Instruction::Call(a) => self.call(a),
             Instruction::LoadVal(r, v) => self.load_val(r, v),
