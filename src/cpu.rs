@@ -85,7 +85,7 @@ impl Cpu {
         self.keys[key as usize] = pressed;
     }
 
-    fn read_next_instruction(&self) -> (u16) {
+    fn read_next_instruction(&self) -> u16 {
         let upper = self.memory[self.pc as usize] as u16;
         let lower = self.memory[(self.pc + 1) as usize] as u16;
         upper << 8 | lower
