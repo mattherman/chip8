@@ -49,7 +49,10 @@ fn main() {
         let mut step_forward = false;
 
         if let Some(_) = e.render_args() {
-            draw_screen(&e, &cpu.get_screen(), &mut window);
+            if cpu.draw_flag {
+                draw_screen(&e, &cpu.get_screen(), &mut window);
+                cpu.draw_flag = false
+            }
         }
 
         if let Some(button) = e.press_args() {

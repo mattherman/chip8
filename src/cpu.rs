@@ -14,6 +14,7 @@ pub struct Cpu {
     sp: u16,
     del_timer: u8,
     sound_timer: u8,
+    tick: u32,
     keys: [bool; 16],
     debug_mode: bool,
     pub display: Display,
@@ -42,6 +43,7 @@ impl Cpu {
             sp: 0,
             del_timer: 0,
             sound_timer: 0,
+            tick: 0,
             display: display,
             keys: [false; 16],
             draw_flag: false,
@@ -69,7 +71,10 @@ impl Cpu {
             self.faulted = true;
         } else {
             self.execute_instruction(instruction);
+
             self.handle_timers();
+
+            self.tick += 1;
 
             if self.debug_mode {
                 self.debug();
@@ -126,6 +131,10 @@ impl Cpu {
     }
 
     fn handle_timers(&mut self) {
+        if self.tick % 6 != 0 {
+            return
+        }
+
         if self.del_timer > 0 {
             self.del_timer -= 1;
         }
@@ -336,6 +345,8 @@ impl Cpu {
         let flipped = self.display.draw_sprite(&sprite, x as usize, y as usize);
         self.set_register(0xF, flipped as u8);
 
+        self.draw_flag = true;
+
         self.pc += INSTRUCTION_SIZE;
     }
 
@@ -433,11 +444,12 @@ impl Cpu {
             reg[15]
         );
         println!(
-            "I: 0x{:03X} SP: 0x{:04X} DELAY: {} SOUND: {}",
+            "I: 0x{:03X} SP: 0x{:04X} DELAY: {} SOUND: {} TICK: {}",
             self.index,
             self.sp,
             self.del_timer,
-            self.sound_timer
+            self.sound_timer,
+            self.tick
         );
         println!("MEM[I]: 0x{:02X}", self.memory[self.index as usize]);
         let keys = self.keys;
