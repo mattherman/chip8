@@ -14,10 +14,14 @@ use std::fs::File;
 use std::io::Read;
 use std::env;
 use std::process;
+use std::time::Instant;
 
 const ENLARGEMENT_FACTOR: u32 = 8;
 const WINDOW_WIDTH: u32 = 64;
 const WINDOW_HEIGHT: u32 = 32;
+
+// Must be a multiple of 60 for the timers to work properly
+const CLOCK_SPEED_HZ: u32 = 360;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -41,9 +45,12 @@ fn main() {
     file.read_to_end(&mut game_data)
         .expect("Unable to read the ROM file.",);
 
-    let mut cpu = Cpu::new(game_data, debug);
+    let mut cpu = Cpu::new(game_data, CLOCK_SPEED_HZ, debug);
     let keyboard = Keyboard::new(KeyMapping::Improved);
 
+    let cycle_time_millis: u128 = (1000 / CLOCK_SPEED_HZ).into();
+
+    let mut clock = Instant::now();
     while let Some(e) = window.next() {
 
         let mut step_forward = false;
@@ -70,10 +77,18 @@ fn main() {
                 cpu.set_key(key_val, false);
             }
         }
-        
+
         // If debugging is enabled, only cycle on space bar presses
-        if !step || step_forward {
-            cpu.cycle();
+        if step {
+            if step_forward {
+                cpu.cycle();
+            }
+        } else {
+            let elapsed = clock.elapsed().as_millis();
+            if elapsed >= cycle_time_millis {
+                cpu.cycle();
+                clock = Instant::now();
+            }
         }
     }
 }

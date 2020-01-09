@@ -15,6 +15,7 @@ pub struct Cpu {
     del_timer: u8,
     sound_timer: u8,
     tick: u32,
+    timer_tick: u32,
     keys: [bool; 16],
     debug_mode: bool,
     pub display: Display,
@@ -23,7 +24,7 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new(game_data: Vec<u8>, debug_mode: bool) -> Cpu {
+    pub fn new(game_data: Vec<u8>, clock_speed: u32, debug_mode: bool) -> Cpu {
         let mut memory = [0; 4096];
         for (i, byte) in game_data.iter().enumerate() {
             memory[0x200 + i] = byte.clone();
@@ -44,6 +45,7 @@ impl Cpu {
             del_timer: 0,
             sound_timer: 0,
             tick: 0,
+            timer_tick: clock_speed / 60,
             display: display,
             keys: [false; 16],
             draw_flag: false,
@@ -131,7 +133,7 @@ impl Cpu {
     }
 
     fn handle_timers(&mut self) {
-        if self.tick % 6 != 0 {
+        if self.tick % self.timer_tick != 0 {
             return
         }
 
