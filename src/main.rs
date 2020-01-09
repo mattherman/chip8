@@ -13,6 +13,7 @@ use keyboard::{ Keyboard, KeyMapping };
 use std::fs::File;
 use std::io::Read;
 use std::env;
+use std::process;
 
 const ENLARGEMENT_FACTOR: u32 = 8;
 const WINDOW_WIDTH: u32 = 64;
@@ -20,21 +21,25 @@ const WINDOW_HEIGHT: u32 = 32;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let debug = args.len() > 1 && args[1] == "debug";
-    let step = args.len() > 2 && args[2] == "step";
+    if args.len() < 2 {
+        println!("Usage: chip8 [rom] [--debug (optional)] [--step (optional)]");
+        process::exit(0);
+    }
+    let rom = &args[1];
+    let debug = args.contains(&String::from("--debug"));
+    let step = args.contains(&String::from("--step"));
 
     let width = WINDOW_WIDTH * ENLARGEMENT_FACTOR;
     let height = WINDOW_HEIGHT * ENLARGEMENT_FACTOR;
 
     let mut window = create_window(width, height);
 
-    let mut file = File::open("/home/matt/Development/chip8/roms/keypadtest.rom")
+    let mut file = File::open(rom)
         .expect("Unable to open the ROM file.");
 
     let mut game_data = Vec::new();
-    file.read_to_end(&mut game_data).expect(
-        "Unable to read the ROM file.",
-    );
+    file.read_to_end(&mut game_data)
+        .expect("Unable to read the ROM file.",);
 
     let mut cpu = Cpu::new(game_data, debug);
     let keyboard = Keyboard::new(KeyMapping::Improved);
