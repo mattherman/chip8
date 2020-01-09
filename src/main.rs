@@ -23,29 +23,34 @@ const WINDOW_HEIGHT: u32 = 32;
 // Must be a multiple of 60 for the timers to work properly
 const CLOCK_SPEED_HZ: u32 = 360;
 
+struct Arguments {
+    rom: String,
+    step: bool,
+    debug: bool
+}
+
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!("Usage: chip8 [rom] [--debug (optional)] [--step (optional)]");
-        process::exit(0);
-    }
-    let rom = &args[1];
-    let debug = args.contains(&String::from("--debug"));
-    let step = args.contains(&String::from("--step"));
+    let arguments = match parse_args() {
+        Ok(args) => args,
+        Err(_) => {
+            println!("Usage: chip8 [rom] [--debug (optional)] [--step (optional)]");
+            process::exit(0);
+        }
+    };
 
     let width = WINDOW_WIDTH * ENLARGEMENT_FACTOR;
     let height = WINDOW_HEIGHT * ENLARGEMENT_FACTOR;
 
     let mut window = create_window(width, height);
 
-    let mut file = File::open(rom)
+    let mut file = File::open(arguments.rom)
         .expect("Unable to open the ROM file.");
 
     let mut game_data = Vec::new();
     file.read_to_end(&mut game_data)
         .expect("Unable to read the ROM file.",);
 
-    let mut cpu = Cpu::new(game_data, CLOCK_SPEED_HZ, debug);
+    let mut cpu = Cpu::new(game_data, CLOCK_SPEED_HZ, arguments.debug);
     let keyboard = Keyboard::new(KeyMapping::Improved);
 
     let cycle_time_millis: u128 = (1000 / CLOCK_SPEED_HZ).into();
@@ -63,7 +68,7 @@ fn main() {
         }
 
         if let Some(button) = e.press_args() {
-            if button == Button::Keyboard(Key::Space) && step {
+            if button == Button::Keyboard(Key::Space) && arguments.step {
                 step_forward = true;
             }
 
@@ -79,7 +84,7 @@ fn main() {
         }
 
         // If debugging is enabled, only cycle on space bar presses
-        if step {
+        if arguments.step {
             if step_forward {
                 cpu.cycle();
             }
@@ -91,6 +96,23 @@ fn main() {
             }
         }
     }
+}
+
+fn parse_args() -> Result<Arguments, String> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        return Err(String::from("Too few arguments"))
+    }
+    let rom = &args[1];
+    let debug = args.contains(&String::from("--debug"));
+    let step = args.contains(&String::from("--step"));
+
+    let args = Arguments {
+        rom: String::from(rom),
+        step: step,
+        debug: debug 
+    };
+    return Ok(args)
 }
 
 fn create_window(width: u32, height: u32) -> PistonWindow {
