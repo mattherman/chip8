@@ -480,3 +480,42 @@ impl Cpu {
         println!();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn get_cpu() -> Cpu {
+        return Cpu::new(Vec::new(), 360, false);
+    }
+
+    #[test]
+    fn jump() {
+        let mut cpu = get_cpu();
+        cpu.pc = 0x0000;
+        cpu.jump(0x1337);
+        assert_eq!(0x1337, cpu.pc);
+    }
+
+    #[test]
+    fn call_and_return() {
+        let mut cpu = get_cpu();
+        cpu.pc = 0x1337;
+        cpu.call(0x6666);
+        assert_eq!(1, cpu.sp);
+        assert_eq!(0x1337, cpu.stack[cpu.sp as usize]);
+        assert_eq!(0x6666, cpu.pc);
+        cpu.ret();
+        assert_eq!(0, cpu.sp);
+        assert_eq!(0x1337, cpu.pc);
+    }
+
+    #[test]
+    fn load_val() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+        cpu.load_val(0x00, 0x42);
+        assert_eq!(initial_pc + INSTRUCTION_SIZE, cpu.pc);
+        assert_eq!(0x42, cpu.registers[0]);
+    }
+}
