@@ -1,0 +1,22 @@
+name: chip8
+version: "1.0.0"
+author: Matthew Herman <mattherman11@gmail.com>
+about: CHIP-8 emulator written in rust
+args:
+    - ROM:
+        help: Sets the rom file to use
+        required: true
+        index: 1
+    - debug:
+        short: d
+        long: debug
+        help: Logs additional debug information
+    - step:
+        short: s
+        long: step
+        help: Step the emulator forward manually using space bar
+    - speed:
+        long: speed
+        takes_value: true
+        value_name: SPEED
+        help: Sets the speed of the emulator, supports [0.5, 1, 2], ignored if executing in step mode

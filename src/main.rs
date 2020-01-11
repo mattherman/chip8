@@ -2,17 +2,20 @@ extern crate piston_window;
 extern crate image;
 extern crate rand;
 
+#[macro_use]
+extern crate clap;
+
 mod cpu;
 mod display;
 mod instruction;
 mod keyboard;
 
+use clap::App;
 use piston_window::*;
 use cpu::Cpu;
 use keyboard::{ Keyboard, KeyMapping };
 use std::fs::File;
 use std::io::Read;
-use std::env;
 use std::process;
 use std::time::Instant;
 
@@ -20,13 +23,21 @@ const ENLARGEMENT_FACTOR: u32 = 8;
 const WINDOW_WIDTH: u32 = 64;
 const WINDOW_HEIGHT: u32 = 32;
 
-// Must be a multiple of 60 for the timers to work properly
-const CLOCK_SPEED_HZ: u32 = 360;
+const CLOCK_SPEED_HZ_HALF: u32 = 180;
+const CLOCK_SPEED_HZ_DEFAULT: u32 = 360;
+const CLOCK_SPEED_HZ_DOUBLE: u32 = 720;
+
+enum EmulatorSpeed {
+    Half,
+    Normal,
+    Double
+}
 
 struct Arguments {
     rom: String,
     step: bool,
-    debug: bool
+    debug: bool,
+    speed: EmulatorSpeed
 }
 
 fn main() {
@@ -50,10 +61,16 @@ fn main() {
     file.read_to_end(&mut game_data)
         .expect("Unable to read the ROM file.",);
 
-    let mut cpu = Cpu::new(game_data, CLOCK_SPEED_HZ, arguments.debug);
+    let clock_speed = match arguments.speed {
+        EmulatorSpeed::Half => CLOCK_SPEED_HZ_HALF,
+        EmulatorSpeed::Normal => CLOCK_SPEED_HZ_DEFAULT,
+        EmulatorSpeed::Double => CLOCK_SPEED_HZ_DOUBLE
+    };
+
+    let mut cpu = Cpu::new(game_data, clock_speed, arguments.debug);
     let keyboard = Keyboard::new(KeyMapping::Improved);
 
-    let cycle_time_millis: u128 = (1000 / CLOCK_SPEED_HZ).into();
+    let cycle_time_millis: u128 = (1000 / clock_speed).into();
 
     let mut clock = Instant::now();
     while let Some(e) = window.next() {
@@ -99,19 +116,20 @@ fn main() {
 }
 
 fn parse_args() -> Result<Arguments, String> {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        return Err(String::from("Too few arguments"))
-    }
-    let rom = &args[1];
-    let debug = args.contains(&String::from("--debug"));
-    let step = args.contains(&String::from("--step"));
+    let yaml = load_yaml!("../cli.yml");
+    let matches = App::from_yaml(yaml).get_matches();
 
-    let args = Arguments {
-        rom: String::from(rom),
-        step: step,
-        debug: debug 
+    let rom = String::from(matches.value_of("ROM").unwrap());
+    let debug = matches.is_present("debug");
+    let step = matches.is_present("step");
+    let speed_arg = matches.value_of("speed").unwrap_or("1");
+    let speed = match speed_arg {
+        "0.5" => EmulatorSpeed::Half,
+        "2" => EmulatorSpeed::Double,
+        _ => EmulatorSpeed::Normal
     };
+
+    let args = Arguments { rom, step, debug, speed };
     return Ok(args)
 }
 

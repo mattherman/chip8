@@ -7,3 +7,4 @@ authors = ["Matthew Herman <mattherman11@gmail.com>"]
 piston_window = "0.61.0"
 image = "0.12.4"
 rand = "0.3"
+clap = { version = "2.33.0", features = ["yaml"] }
