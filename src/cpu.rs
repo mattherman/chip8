@@ -483,4 +483,183 @@ mod tests {
         assert_eq!(initial_pc + INSTRUCTION_SIZE, cpu.pc);
         assert_eq!(0x42, cpu.registers[0]);
     }
+
+    #[test]
+    fn skip_equal_value_equals_reg() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+        cpu.registers[0] = 0x42;
+        cpu.skip_equal(0x00, 0x42);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 2), cpu.pc);
+    }
+    
+    #[test]
+    fn skip_equal_value_not_equals_reg() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+        cpu.registers[0] = 0x00;
+        cpu.skip_equal(0x00, 0x42);
+        assert_eq!(initial_pc + INSTRUCTION_SIZE, cpu.pc);
+    }
+
+    #[test]
+    fn skip_not_equal_value_equals_reg() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+        cpu.registers[0] = 0x42;
+        cpu.skip_not_equal(0x00, 0x42);
+        assert_eq!(initial_pc + INSTRUCTION_SIZE, cpu.pc);
+    }
+    
+    #[test]
+    fn skip_not_equal_value_not_equals_reg() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+        cpu.registers[0] = 0x00;
+        cpu.skip_not_equal(0x00, 0x42);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 2), cpu.pc);
+    }
+
+    #[test]
+    fn skip_reg_equal_registers_equal() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+        cpu.registers[0] = 0x42;
+        cpu.registers[1] = 0x42;
+        cpu.skip_reg_equal(0x00, 0x01);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 2), cpu.pc);
+    }
+
+    #[test]
+    fn skip_reg_equal_registers_not_equal() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+        cpu.registers[0] = 0x42;
+        cpu.registers[1] = 0x00;
+        cpu.skip_reg_equal(0x00, 0x01);
+        assert_eq!(initial_pc + INSTRUCTION_SIZE, cpu.pc);
+    }
+
+    #[test]
+    fn add_val() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+        cpu.registers[0] = 0x42;
+        cpu.add_val(0x00, 0x01);
+        assert_eq!(initial_pc + INSTRUCTION_SIZE, cpu.pc);
+        assert_eq!(0x43, cpu.registers[0]);
+    }
+
+    #[test]
+    fn load_reg() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+        cpu.registers[0] = 0x00;
+        cpu.registers[1] = 0x42;
+        cpu.load_reg(0x00, 0x01);
+        assert_eq!(initial_pc + INSTRUCTION_SIZE, cpu.pc);
+        assert_eq!(0x42, cpu.registers[0]);
+    }
+
+    #[test]
+    fn or() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+
+        cpu.registers[0] = 0x00;
+        cpu.registers[1] = 0x00;
+        
+        cpu.registers[2] = 0x00;
+        cpu.registers[3] = 0x01;
+
+        cpu.registers[4] = 0x01;
+        cpu.registers[5] = 0x00;
+
+        cpu.registers[6] = 0x01;
+        cpu.registers[7] = 0x01;
+
+        cpu.or(0x00, 0x01);
+        assert_eq!(0x00, cpu.registers[0]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 1), cpu.pc);
+
+        cpu.or(0x02, 0x03);
+        assert_eq!(0x01, cpu.registers[2]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 2), cpu.pc);
+
+        cpu.or(0x04, 0x05);
+        assert_eq!(0x01, cpu.registers[4]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 3), cpu.pc);
+
+        cpu.or(0x06, 0x07);
+        assert_eq!(0x01, cpu.registers[6]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 4), cpu.pc);
+    }
+
+    #[test]
+    fn and() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+
+        cpu.registers[0] = 0x00;
+        cpu.registers[1] = 0x00;
+        
+        cpu.registers[2] = 0x00;
+        cpu.registers[3] = 0x01;
+
+        cpu.registers[4] = 0x01;
+        cpu.registers[5] = 0x00;
+
+        cpu.registers[6] = 0x01;
+        cpu.registers[7] = 0x01;
+
+        cpu.and(0x00, 0x01);
+        assert_eq!(0x00, cpu.registers[0]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 1), cpu.pc);
+
+        cpu.and(0x02, 0x03);
+        assert_eq!(0x00, cpu.registers[2]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 2), cpu.pc);
+
+        cpu.and(0x04, 0x05);
+        assert_eq!(0x00, cpu.registers[4]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 3), cpu.pc);
+
+        cpu.and(0x06, 0x07);
+        assert_eq!(0x01, cpu.registers[6]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 4), cpu.pc);
+    }
+
+    #[test]
+    fn xor() {
+        let mut cpu = get_cpu();
+        let initial_pc = cpu.pc;
+
+        cpu.registers[0] = 0x00;
+        cpu.registers[1] = 0x00;
+        
+        cpu.registers[2] = 0x00;
+        cpu.registers[3] = 0x01;
+
+        cpu.registers[4] = 0x01;
+        cpu.registers[5] = 0x00;
+
+        cpu.registers[6] = 0x01;
+        cpu.registers[7] = 0x01;
+
+        cpu.xor(0x00, 0x01);
+        assert_eq!(0x00, cpu.registers[0]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 1), cpu.pc);
+
+        cpu.xor(0x02, 0x03);
+        assert_eq!(0x01, cpu.registers[2]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 2), cpu.pc);
+
+        cpu.xor(0x04, 0x05);
+        assert_eq!(0x01, cpu.registers[4]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 3), cpu.pc);
+
+        cpu.xor(0x06, 0x07);
+        assert_eq!(0x00, cpu.registers[6]);
+        assert_eq!(initial_pc + (INSTRUCTION_SIZE * 4), cpu.pc);
+    }
 }
