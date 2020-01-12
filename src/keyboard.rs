@@ -1,4 +1,4 @@
-use piston_window::{ Button, Key };
+use piston_window::{Button, Key};
 
 pub struct Keyboard {
     mapping: KeyMapping,
@@ -11,11 +11,8 @@ pub enum KeyMapping {
 }
 
 impl Keyboard {
-
     pub fn new(map: KeyMapping) -> Keyboard {
-        Keyboard {
-            mapping: map
-        }
+        Keyboard { mapping: map }
     }
 
     pub fn map_key(&self, button: Button) -> Option<u8> {

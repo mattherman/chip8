@@ -1,5 +1,5 @@
-extern crate piston_window;
 extern crate image;
+extern crate piston_window;
 extern crate rand;
 
 #[macro_use]
@@ -11,9 +11,9 @@ mod instruction;
 mod keyboard;
 
 use clap::App;
-use piston_window::*;
 use cpu::Cpu;
-use keyboard::{ Keyboard, KeyMapping };
+use keyboard::{KeyMapping, Keyboard};
+use piston_window::*;
 use std::fs::File;
 use std::io::Read;
 use std::process;
@@ -30,14 +30,14 @@ const CLOCK_SPEED_HZ_DOUBLE: u32 = 720;
 enum EmulatorSpeed {
     Half,
     Normal,
-    Double
+    Double,
 }
 
 struct Arguments {
     rom: String,
     step: bool,
     debug: bool,
-    speed: EmulatorSpeed
+    speed: EmulatorSpeed,
 }
 
 fn main() {
@@ -54,17 +54,16 @@ fn main() {
 
     let mut window = create_window(width, height);
 
-    let mut file = File::open(arguments.rom)
-        .expect("Unable to open the ROM file.");
+    let mut file = File::open(arguments.rom).expect("Unable to open the ROM file.");
 
     let mut game_data = Vec::new();
     file.read_to_end(&mut game_data)
-        .expect("Unable to read the ROM file.",);
+        .expect("Unable to read the ROM file.");
 
     let clock_speed = match arguments.speed {
         EmulatorSpeed::Half => CLOCK_SPEED_HZ_HALF,
         EmulatorSpeed::Normal => CLOCK_SPEED_HZ_DEFAULT,
-        EmulatorSpeed::Double => CLOCK_SPEED_HZ_DOUBLE
+        EmulatorSpeed::Double => CLOCK_SPEED_HZ_DOUBLE,
     };
 
     let mut cpu = Cpu::new(game_data, clock_speed, arguments.debug);
@@ -74,7 +73,6 @@ fn main() {
 
     let mut clock = Instant::now();
     while let Some(e) = window.next() {
-
         let mut step_forward = false;
 
         if let Some(_) = e.render_args() {
@@ -126,11 +124,16 @@ fn parse_args() -> Result<Arguments, String> {
     let speed = match speed_arg {
         "0.5" => EmulatorSpeed::Half,
         "2" => EmulatorSpeed::Double,
-        _ => EmulatorSpeed::Normal
+        _ => EmulatorSpeed::Normal,
     };
 
-    let args = Arguments { rom, step, debug, speed };
-    return Ok(args)
+    let args = Arguments {
+        rom,
+        step,
+        debug,
+        speed,
+    };
+    return Ok(args);
 }
 
 fn create_window(width: u32, height: u32) -> PistonWindow {
@@ -171,7 +174,6 @@ fn draw_screen(event: &Event, screen: &display::Screen, window: &mut PistonWindo
         }
     });
 }
-
 
 // TODO:
 // 1) Fix display issues, it is currently not working at all

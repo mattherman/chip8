@@ -4,8 +4,7 @@ pub type Value = u8;
 
 use std::fmt;
 
-#[derive(Debug)]
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Instruction {
     Clear,
     Return,
@@ -41,13 +40,11 @@ pub enum Instruction {
 impl Instruction {
     pub fn parse(val: u16) -> Instruction {
         match val & 0xF000 {
-            0x0000 => {
-                match val & 0x0FFF {
-                    0x00E0 => Instruction::Clear,
-                    0x00EE => Instruction::Return,
-                    _ => Instruction::ExRoutine(addr(val)),
-                }
-            }
+            0x0000 => match val & 0x0FFF {
+                0x00E0 => Instruction::Clear,
+                0x00EE => Instruction::Return,
+                _ => Instruction::ExRoutine(addr(val)),
+            },
             0x1000 => Instruction::Jump(addr(val)),
             0x2000 => Instruction::Call(addr(val)),
             0x3000 => Instruction::SkipIfEqual(reg1(val), byte(val)),
@@ -55,39 +52,33 @@ impl Instruction {
             0x5000 => Instruction::SkipIfRegEqual(reg1(val), reg2(val)),
             0x6000 => Instruction::LoadVal(reg1(val), byte(val)),
             0x7000 => Instruction::AddVal(reg1(val), byte(val)),
-            0x8000 => {
-                match val & 0x000F {
-                    0x0000 => Instruction::LoadReg(reg1(val), reg2(val)),
-                    0x0001 => Instruction::Or(reg1(val), reg2(val)),
-                    0x0002 => Instruction::And(reg1(val), reg2(val)),
-                    0x0003 => Instruction::Xor(reg1(val), reg2(val)),
-                    0x0004 => Instruction::AddReg(reg1(val), reg2(val)),
-                    0x0005 => Instruction::SubReg(reg1(val), reg2(val)),
-                    0x0006 => Instruction::ShiftRight(reg1(val)),
-                    0x000E => Instruction::ShiftLeft(reg1(val)),
-                    _ => Instruction::InvalidOperation,
-                }
-            }
+            0x8000 => match val & 0x000F {
+                0x0000 => Instruction::LoadReg(reg1(val), reg2(val)),
+                0x0001 => Instruction::Or(reg1(val), reg2(val)),
+                0x0002 => Instruction::And(reg1(val), reg2(val)),
+                0x0003 => Instruction::Xor(reg1(val), reg2(val)),
+                0x0004 => Instruction::AddReg(reg1(val), reg2(val)),
+                0x0005 => Instruction::SubReg(reg1(val), reg2(val)),
+                0x0006 => Instruction::ShiftRight(reg1(val)),
+                0x000E => Instruction::ShiftLeft(reg1(val)),
+                _ => Instruction::InvalidOperation,
+            },
             0xA000 => Instruction::SetIndexRegister(addr(val)),
             0xC000 => Instruction::Random(reg1(val), byte(val)),
             0xD000 => Instruction::Draw(reg1(val), reg2(val), nibble(val)),
-            0xE000 => {
-                match val & 0x00FF {
-                    0x009E => Instruction::SkipIfKey(reg1(val)),
-                    0x00A1 => Instruction::SkipIfNotKey(reg1(val)),
-                    _ => Instruction::InvalidOperation,
-                }
+            0xE000 => match val & 0x00FF {
+                0x009E => Instruction::SkipIfKey(reg1(val)),
+                0x00A1 => Instruction::SkipIfNotKey(reg1(val)),
+                _ => Instruction::InvalidOperation,
             },
-            0xF000 => {
-                match val & 0x00FF {
-                    0x001E => Instruction::AddIndex(reg1(val)),
-                    0x0029 => Instruction::LoadDigit(reg1(val)),
-                    0x0033 => Instruction::LoadBCD(reg1(val)),
-                    0x0055 => Instruction::StoreIndex(reg1(val)),
-                    0x0065 => Instruction::ReadIndex(reg1(val)),
-                    _ => Instruction::InvalidOperation,
-                }
-            }
+            0xF000 => match val & 0x00FF {
+                0x001E => Instruction::AddIndex(reg1(val)),
+                0x0029 => Instruction::LoadDigit(reg1(val)),
+                0x0033 => Instruction::LoadBCD(reg1(val)),
+                0x0055 => Instruction::StoreIndex(reg1(val)),
+                0x0065 => Instruction::ReadIndex(reg1(val)),
+                _ => Instruction::InvalidOperation,
+            },
             _ => Instruction::InvalidOperation,
         }
     }

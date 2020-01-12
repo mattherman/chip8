@@ -1,5 +1,5 @@
-use instruction::{Instruction, Register, Address, Value};
-use display::{Display, SPRITES, Screen};
+use display::{Display, Screen, SPRITES};
+use instruction::{Address, Instruction, Register, Value};
 use rand;
 use rand::Rng;
 
@@ -64,9 +64,7 @@ impl Cpu {
 
         println!(
             "[PC:0x{:X}] [RAW:0x{:04X}] {}",
-            self.pc,
-            raw_instruction,
-            instruction
+            self.pc, raw_instruction, instruction
         );
 
         if instruction == Instruction::InvalidOperation {
@@ -87,7 +85,6 @@ impl Cpu {
     pub fn get_screen(&mut self) -> &Screen {
         self.display.get_screen()
     }
-    
     pub fn set_key(&mut self, key: u8, pressed: bool) {
         self.keys[key as usize] = pressed;
     }
@@ -134,7 +131,7 @@ impl Cpu {
 
     fn handle_timers(&mut self) {
         if self.tick % self.timer_tick != 0 {
-            return
+            return;
         }
 
         if self.del_timer > 0 {
@@ -425,57 +422,25 @@ impl Cpu {
         let reg = self.registers;
         println!(
             "V0:{} V1:{} V2:{} V3:{} V4:{} V5:{} V6:{} V7:{}",
-            reg[0],
-            reg[1],
-            reg[2],
-            reg[3],
-            reg[4],
-            reg[5],
-            reg[6],
-            reg[7]
+            reg[0], reg[1], reg[2], reg[3], reg[4], reg[5], reg[6], reg[7]
         );
         println!(
             "V8:{} V9:{} VA:{} VB:{} VC:{} VD:{} VE:{} VF:{}",
-            reg[8],
-            reg[9],
-            reg[10],
-            reg[11],
-            reg[12],
-            reg[13],
-            reg[14],
-            reg[15]
+            reg[8], reg[9], reg[10], reg[11], reg[12], reg[13], reg[14], reg[15]
         );
         println!(
             "I: 0x{:03X} SP: 0x{:04X} DELAY: {} SOUND: {} TICK: {}",
-            self.index,
-            self.sp,
-            self.del_timer,
-            self.sound_timer,
-            self.tick
+            self.index, self.sp, self.del_timer, self.sound_timer, self.tick
         );
         println!("MEM[I]: 0x{:02X}", self.memory[self.index as usize]);
         let keys = self.keys;
         println!(
             "K0:{} K1:{} K2:{} K3:{} K4:{} K5:{} K6:{} K7:{}",
-            keys[0],
-            keys[1],
-            keys[2],
-            keys[3],
-            keys[4],
-            keys[5],
-            keys[6],
-            keys[7]
+            keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6], keys[7]
         );
         println!(
             "K8:{} K9:{} KA:{} KB:{} KC:{} KD:{} KE:{} KF:{}",
-            keys[8],
-            keys[9],
-            keys[10],
-            keys[11],
-            keys[12],
-            keys[13],
-            keys[14],
-            keys[15]
+            keys[8], keys[9], keys[10], keys[11], keys[12], keys[13], keys[14], keys[15]
         );
         println!();
     }
